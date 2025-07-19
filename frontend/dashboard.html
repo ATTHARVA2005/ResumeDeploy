@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResumeRank Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter (for general text) and Playfair Display (for ResumeRank title) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Lighter background for a modern feel */
+            color: #334155; /* Darker text for readability */
+        }
+        /* Custom styles for skill tags, progress bar, etc. will be in style.css */
+        .logo-header {
+            height: 100px; /* Decreased size */
+            width: auto;
+            margin-right: 1.5rem; /* Adjusted margin for larger logo */
+        }
+        .logo-font {
+            font-family: 'Playfair Display', serif; /* Apply new font to ResumeRank */
+        }
+        /* Styles for nav links are now primarily in style.css */
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white p-6 shadow-md">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <!-- Left Section: Logo and Main Title -->
+            <div class="flex items-center mb-2 sm:mb-0">
+                <img src="/static/images/logo.png" alt="ResumeRank Logo" class="logo-header">
+                <h1 class="text-4xl font-bold logo-font">ResumeRank</h1>
+            </div>
+
+            <!-- Right Section: Navigation -->
+            <div class="flex items-center mt-2 sm:mt-0">
+                <nav>
+                    <ul class="flex space-x-4">
+                        <li><a href="/dashboard" class="current-page-link">Dashboard</a></li>
+                        <li><a href="/add-job" class="nav-link hover:text-indigo-200">Add Job</a></li>
+                        <li><a href="/uploaded-resumes" class="nav-link hover:text-indigo-200">Uploaded Resumes</a></li>
+                        <li><a href="/job-descriptions-page" class="nav-link hover:text-indigo-200">Job Descriptions</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto p-6 flex-grow">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Upload Resume Section -->
+            <section id="upload-section" class="card bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Upload Resume</h2>
+                <form id="uploadResumeForm" class="space-y-4">
+                    <div>
+                        <label for="resumeFile" class="block text-sm font-medium text-gray-700 mb-1">Select Resume File (PDF)</label>
+                        <input type="file" id="resumeFile" name="file" accept=".pdf,.docx,.txt" required
+                               class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    </div>
+                    <button type="submit" class="btn-primary w-full">Upload & Process</button>
+                    <div id="uploadStatus" class="mt-4 text-sm font-medium"></div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div id="uploadProgressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%;"></div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Match Resumes Section -->
+            <section id="match-section" class="card bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Match Resumes</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="jobSelect" class="block text-sm font-medium text-gray-700 mb-1">Select Job Description</label>
+                        <select id="jobSelect" class="input-field">
+                            <option value="">-- Select a Job --</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <button id="matchResumesBtn" class="btn-primary w-full">Match Resumes</button>
+                    <div id="matchStatus" class="mt-4 text-sm font-medium"></div>
+                </div>
+                <div id="matchingResults" class="mt-6 space-y-4">
+                    <!-- Matching results will be displayed here by JavaScript -->
+                    <p class="text-gray-500">Select a job and click "Match Resumes" to see results or add a new job by going to add job from navigation bar.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Resume Details Modal -->
+    <div id="resumeDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 class="text-2xl font-bold text-indigo-800 mb-4">Resume Details</h3>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Filename: <span id="modalResumeFilename" class="font-normal text-gray-600"></span></p>
+            <div class="mb-4">
+                <p class="font-semibold text-gray-700 mb-1">Extracted Skills:</p>
+                <div id="modalResumeSkills" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-700 mb-1">Raw Text Preview:</p>
+                <pre id="modalResumeRawText" class="bg-gray-100 p-3 rounded-md text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto border border-gray-200"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Details Modal -->
+    <div id="jobDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 class="text-2xl font-bold text-indigo-800 mb-4">Job Description Details</h3>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Title: <span id="modalJobTitle" class="font-normal text-gray-600"></span></p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Company: <span id="modalJobCompany" class="font-normal text-gray-600"></span></p>
+            <div class="mb-4">
+                <p class="font-semibold text-gray-700 mb-1">Required Skills:</p>
+                <div id="modalJobRequiredSkills" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-700 mb-1">Description:</p>
+                <pre id="modalJobDescriptionText" class="bg-gray-100 p-3 rounded-md text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto border border-gray-200"></pre>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8 shadow-inner">
+        <p>&copy; 2025 ResumeRank. All rights reserved.</p>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

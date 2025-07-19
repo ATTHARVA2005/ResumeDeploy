@@ -1,0 +1,35 @@
+# Core Framework
+fastapi
+uvicorn
+
+# NLP Libraries
+spacy
+nltk
+scikit-learn
+
+# Text Processing
+python-docx
+pdfminer.six
+# textract==1.6.5 # Removed due to installation issues
+
+# Database
+# sqlite3 # Removed: This is part of Python's standard library
+sqlalchemy      # New: Object-Relational Mapper
+psycopg2-binary # New: PostgreSQL database adapter
+
+# Data Processing
+pandas
+numpy
+
+# API and File Handling
+python-multipart
+aiofiles
+
+# Additional utilities
+regex
+fuzzywuzzy
+python-levenshtein
+
+# Development
+pytest
+python-dotenv

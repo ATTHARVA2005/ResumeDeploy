@@ -1,0 +1,378 @@
+/* frontend/static/css/style.css */
+
+/* General Body and Container Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc; /* Lighter background for a modern feel */
+    color: #334155; /* Darker text for readability */
+    overflow-x: hidden; /* Prevent horizontal scroll for animations */
+}
+
+.container {
+    max-width: 1200px; /* Max width for content */
+    margin-left: auto; /* Center the container */
+    margin-right: auto; /* Center the container */
+}
+
+/* Card Styling */
+.card {
+    background-color: #ffffff;
+    border-radius: 0.75rem; /* Rounded corners */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-3px); /* Slight lift on hover */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Input Field Styling */
+.input-field {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem; /* px-4 py-2 */
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 0.375rem; /* rounded-md */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    font-size: 0.875rem; /* sm:text-sm */
+    line-height: 1.25rem; /* sm:text-sm */
+    transition: all 0.2s ease-in-out;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #6366f1; /* focus:border-indigo-500 */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); /* focus:ring-indigo-500 with opacity */
+}
+
+/* Button Styling */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem; /* px-6 py-3 */
+    border: 1px solid transparent; /* border border-transparent */
+    font-size: 1rem; /* text-base */
+    font-weight: 500; /* font-medium */
+    border-radius: 0.375rem; /* rounded-md */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    color: #ffffff; /* text-white */
+    background-color: #6366f1; /* bg-indigo-600 */
+    background-image: linear-gradient(to right, #6366f1, #818cf8); /* Gradient for primary button */
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3), 0 2px 4px -1px rgba(99, 102, 241, 0.15);
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-image: linear-gradient(to right, #4f46e5, #6366f1); /* Darker gradient on hover */
+    transform: translateY(-1px);
+}
+
+.btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #6366f1; /* focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 */
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem; /* px-4 py-2 */
+    border: 1px solid #d1d5db; /* border border-gray-300 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    border-radius: 0.375rem; /* rounded-md */
+    color: #4b5563; /* text-gray-700 */
+    background-color: #ffffff; /* bg-white */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+    background-color: #f9fafb; /* hover:bg-gray-50 */
+    transform: translateY(-0.5px);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+}
+
+.btn-secondary:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #6366f1; /* focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 */
+}
+
+/* Skill Tag Styling */
+.skill-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem; /* px-3 py-1 */
+    border-radius: 9999px; /* rounded-full */
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 500; /* font-medium */
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+.matched-skill {
+    background-color: #d1fae5; /* bg-green-100 */
+    color: #065f46; /* text-green-800 */
+}
+
+.missing-skill {
+    background-color: #fee2e2; /* bg-red-100 */
+    color: #991b1b; /* text-red-800 */
+}
+
+.additional-skill {
+    background-color: #e0f2fe; /* bg-blue-100 */
+    color: #1e40af; /* text-blue-800 */
+}
+
+/* Progress Bar Styling */
+#uploadProgressBar {
+    background-color: #4f46e5; /* Indigo-600 */
+    border-radius: 9999px; /* Full rounded */
+    height: 100%;
+    transition: width 0.4s ease-out; /* Smooth transition for width change */
+    animation: progress-fill 0.4s ease-out forwards; /* Animation on load */
+}
+
+@keyframes progress-fill {
+    from { width: 0%; }
+    to { width: var(--progress-width); } /* Use custom property set by JS */
+}
+
+/* Matching Results Score Bar */
+.score-bar-container {
+    width: 100%; /* w-full */
+    background-color: #e5e7eb; /* bg-gray-200 */
+    border-radius: 9999px; /* rounded-full */
+    height: 0.875rem; /* h-3.5 */
+    position: relative;
+    overflow: hidden;
+}
+
+.score-bar {
+    background-image: linear-gradient(to right, #4ade80, #22c55e); /* bg-gradient-to-r from-green-400 to-green-600 */
+    height: 100%;
+    border-radius: 9999px; /* rounded-full */
+    transition: width 0.5s ease-out;
+}
+
+.score-text {
+    margin-left: 0.75rem; /* ml-3 */
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 700; /* font-bold */
+    color: #15803d; /* text-green-700 */
+    min-width: 80px; /* Ensure space for percentage text */
+    text-align: right;
+}
+
+/* List Item Styling (for resumes and job descriptions) */
+.list-item {
+    background-color: #ffffff;
+    padding: 1rem; /* p-4 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    border: 1px solid #e5e7eb; /* border border-gray-200 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease-in-out;
+}
+
+.list-item:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+    border-color: #a5b4fc; /* border-indigo-300 */
+    transform: translateY(-2px);
+}
+
+.list-item-title {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 600; /* font-semibold */
+    color: #4338ca; /* text-indigo-700 */
+}
+
+.list-item-details {
+    font-size: 0.875rem; /* text-sm */
+    color: #4b5563; /* text-gray-600 */
+}
+
+/* Modal Styling */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.6); /* Black w/ opacity */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    padding: 20px; /* Padding around the modal */
+}
+
+/* Class to make modal visible via JS */
+.modal-active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: auto; /* Centered */
+    padding: 30px;
+    border-radius: 0.75rem; /* Match card border-radius */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+    position: relative;
+    max-width: 800px; /* Max width for content */
+    width: 95%; /* Responsive width */
+    animation: fadeIn 0.3s ease-out; /* Fade in animation */
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 32px;
+    font-weight: bold;
+    transition: color 0.2s ease-in-out;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Animation for modal */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Preformatted text in modals */
+pre {
+    font-family: 'Inter', sans-serif; /* Use Inter for preformatted text too */
+    line-height: 1.5;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 640px) {
+    /* For the main grid layout */
+    .grid-cols-1.lg\:grid-cols-3 { /* This class is no longer in index.html, but kept for robustness */
+        grid-template-columns: 1fr; /* Stack columns on small screens */
+    }
+    .grid-cols-1.lg\:grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    /* Adjust list items to stack vertically */
+    .list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .list-item > div {
+        width: 100%;
+    }
+    .list-item .flex.space-x-2 {
+        margin-top: 1rem;
+        width: 100%;
+        justify-content: flex-end; /* Align buttons to the right */
+    }
+}
+
+/* --- Navigation Bar Specific Styles (New/Enhanced) --- */
+header .container {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+header nav ul {
+    display: flex;
+    align-items: center; /* Align items vertically in the nav */
+    gap: 1rem; /* Space between nav items */
+}
+
+.nav-link, .current-page-link {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    padding: 0.5rem 1rem; /* Padding for clickability and visual space */
+    border-radius: 0.5rem; /* Slightly rounded corners for links */
+    transition: all 0.3s ease-in-out; /* Smooth transitions for hover/active */
+    position: relative; /* For potential pseudo-elements/animations */
+    overflow: hidden; /* For background animations */
+    z-index: 1; /* Ensure text is above pseudo-elements */
+}
+
+.nav-link {
+    color: #e2e8f0; /* Light text for inactive links */
+}
+
+.nav-link:hover {
+    color: #ffffff; /* White text on hover */
+    background-color: rgba(255, 255, 255, 0.15); /* Subtle background on hover */
+    transform: translateY(-2px); /* Slight lift */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow on hover */
+}
+
+.current-page-link {
+    background-color: rgba(99, 102, 241, 0.85); /* More solid indigo for active */
+    color: #ffffff;
+    font-weight: 600; /* Bolder for active */
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4); /* Stronger shadow for active */
+    transform: translateY(-1px); /* Slight lift for active */
+}
+
+.current-page-link:hover {
+    background-color: rgba(99, 102, 241, 1); /* Full color on hover for active */
+    transform: translateY(-2px); /* Maintain lift */
+}
+
+/* Optional: Add a subtle animated underline for nav links on hover */
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #ffffff; /* White underline */
+    transform: scaleX(0); /* Start hidden */
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-out;
+}
+
+.nav-link:hover::after {
+    transform: scaleX(1); /* Expand on hover */
+    transform-origin: bottom left;
+}
+
+.current-page-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px; /* Slightly thicker for active */
+    background-color: #ffffff;
+    transform: scaleX(1); /* Always visible */
+}
+
+/* Responsive adjustments for header/nav on small screens */
+@media (max-width: 640px) {
+    header .container {
+        flex-direction: column;
+        align-items: center;
+    }
+    header nav {
+        margin-top: 1rem;
+    }
+    header nav ul {
+        flex-direction: column; /* Stack nav items vertically on small screens */
+        gap: 0.5rem; /* Closer spacing when stacked */
+    }
+    .nav-link, .current-page-link {
+        width: 100%; /* Full width for stacked links */
+        text-align: center;
+    }
+}

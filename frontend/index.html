@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to ResumeRank</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter (for general text) and Playfair Display (for ResumeRank title) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Dark background for contrast */
+            color: #e2e8f0; /* Light text */
+            overflow-x: hidden; /* Prevent horizontal scroll from animations */
+        }
+        .landing-header {
+            background-image: linear-gradient(to right, #4f46e5, #8b5cf6); /* Gradient header */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); /* Vibrant gradient background */
+            min-height: calc(100vh - 80px); /* Adjust based on header height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-content {
+            z-index: 10;
+            position: relative;
+            text-align: center;
+            padding: 2rem;
+        }
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5rem; /* Larger font size */
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            animation: fadeInDown 1s ease-out;
+        }
+        .hero-tagline {
+            font-size: 1.5rem;
+            color: #e0e7ff;
+            margin-top: 1rem;
+            animation: fadeInUp 1s ease-out 0.3s forwards;
+            opacity: 0;
+        }
+        .get-started-btn {
+            display: inline-block;
+            margin: 2rem auto; /* Centered margin */
+            padding: 1rem 2.5rem;
+            background-color: #ffffff;
+            color: #6366f1;
+            font-weight: 700;
+            border-radius: 9999px; /* Fully rounded */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+            animation: zoomIn 0.8s ease-out 0.6s forwards;
+            opacity: 0;
+        }
+        .get-started-btn:hover {
+            background-color: #e0e7ff;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Background Animations */
+        .animated-bg-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: moveShapes 15s infinite ease-in-out alternate;
+        }
+        .shape:nth-child(1) { width: 150px; height: 150px; top: 10%; left: 5%; animation-delay: 0s; }
+        .shape:nth-child(2) { width: 100px; height: 100px; top: 50%; left: 80%; animation-delay: 2s; }
+        .shape:nth-child(3) { width: 200px; height: 200px; top: 70%; left: 20%; animation-delay: 4s; }
+        .shape:nth-child(4) { width: 120px; height: 120px; top: 20%; left: 70%; animation-delay: 6s; }
+        .shape:nth-child(5) { width: 180px; height: 180px; top: 80%; left: 50%; animation-delay: 8s; }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes moveShapes {
+            0% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(100px, 50px) scale(1.1); }
+            50% { transform: translate(-50px, 100px) scale(0.9); }
+            75% { transform: translate(70px, -30px) scale(1.2); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Footer for landing page */
+        .landing-footer {
+            background-color: #0f172a; /* Dark background */
+            color: #94a3b8; /* Lighter gray text */
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .logo-header-landing {
+            height: 80px; /* Slightly smaller logo for landing page header */
+            width: auto;
+            margin-right: 1rem;
+        }
+        /* Landing page nav link style */
+        .landing-nav-link {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .landing-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .landing-nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #ffffff;
+            transform: scaleX(0);
+            transform-origin: bottom right;
+            transition: transform 0.3s ease-out;
+        }
+        .landing-nav-link:hover::after {
+            transform: scaleX(1);
+            transform-origin: bottom left;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Header for Landing Page -->
+    <header class="landing-header text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="/static/images/logo.png" alt="ResumeRank Logo" class="logo-header-landing">
+                <h1 class="text-3xl font-bold logo-font">ResumeRank</h1>
+            </div>
+            <nav>
+                <a href="/dashboard" class="landing-nav-link text-white">Go to Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="hero-section flex-grow">
+        <div class="animated-bg-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title">ResumeRank</h1>
+            <p class="hero-tagline">NLP-Powered Resume Analysis. Unbiased. Efficient. Effective.</p>
+            <a href="/dashboard" class="get-started-btn">Get Started Now</a>
+            <!-- Removed "Explore Features" button -->
+        </div>
+    </main>
+
+    <!-- Landing Page Footer -->
+    <footer class="landing-footer">
+        <p>&copy; 2025 ResumeRank. All rights reserved.</p>
+    </footer>
+</body>
+</html>

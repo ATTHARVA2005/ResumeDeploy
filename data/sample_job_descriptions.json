@@ -1,0 +1,22 @@
+[
+    {
+        "title": "Senior Software Engineer",
+        "company": "InnovateX Corp.",
+        "description": "InnovateX Corp. is seeking a highly skilled Senior Software Engineer with expertise in Python, Django, and PostgreSQL. The ideal candidate will have strong experience with AWS, Docker, and CI/CD pipelines. Responsibilities include designing, developing, and deploying scalable web applications, mentoring junior developers, and contributing to architectural decisions. Excellent problem-solving and communication skills are a must. Experience with React or Angular is a plus."
+    },
+    {
+        "title": "Data Scientist",
+        "company": "Analytics Hub",
+        "description": "Analytics Hub is looking for a passionate Data Scientist to join our growing team. You will be responsible for collecting, analyzing, and interpreting large datasets. Required skills include Python (Pandas, NumPy, Scikit-learn), R, SQL, and strong statistical modeling abilities. Experience with machine learning algorithms, data visualization tools (Tableau, Power BI), and cloud platforms (GCP, Azure) is highly desirable. Strong communication and presentation skills are essential for explaining complex findings to stakeholders."
+    },
+    {
+        "title": "DevOps Engineer",
+        "company": "CloudBurst Solutions",
+        "description": "CloudBurst Solutions is hiring a talented DevOps Engineer to build and maintain our automated infrastructure. Key requirements include extensive experience with Linux, Docker, Kubernetes, and Jenkins. Proficiency in scripting (Bash, Python) and familiarity with configuration management tools like Ansible or Terraform is crucial. Experience with AWS or Azure cloud environments, monitoring tools (Prometheus, Grafana), and Git is expected. Agile methodology experience is a plus."
+    },
+    {
+        "title": "Frontend Developer (React)",
+        "company": "Creative UI Labs",
+        "description": "Creative UI Labs seeks a skilled Frontend Developer with a strong focus on React.js. Candidates must be proficient in JavaScript, HTML, CSS, and modern frontend frameworks. Experience with Redux, Webpack, and responsive design is required. Familiarity with RESTful APIs, Git, and UI/UX principles is beneficial. Excellent teamwork and problem-solving skills are highly valued."
+    }
+]

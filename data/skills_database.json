@@ -1,0 +1,65 @@
+{
+    "programming_languages": [
+        "python", "java", "javascript", "c++", "c#", "c", "php", "ruby", "go", "rust",
+        "kotlin", "swift", "typescript", "scala", "r", "matlab", "perl", "shell", "bash",
+        "html", "css"
+    ],
+    "web_technologies": [
+        "react", "angular", "vue", "node.js", "express", "django", "flask",
+        "spring", "bootstrap", "jquery", "sass", "webpack", "babel", "redux", "next.js",
+        "rest api", "graphql", "websocket", "ajax", "json", "xml", "html5", "css3", "tailwind css", "material-ui"
+    ],
+    "databases": [
+        "sql", "mysql", "postgresql", "mongodb", "sqlite", "redis", "cassandra", "oracle",
+        "dynamodb", "elasticsearch", "neo4j", "firebase", "mariadb", "couchbase", "h2 database"
+    ],
+    "frameworks": [
+        "tensorflow", "pytorch", "scikit-learn", "pandas", "numpy", "opencv", "keras",
+        "spring boot", "laravel", "codeigniter", "rails", "asp.net", "xamarin", "flutter",
+        "apache spark", "hadoop", "kafka", "airflow", "dask", "databricks"
+    ],
+    "cloud_platforms": [
+        "aws", "azure", "gcp", "google cloud", "heroku", "digitalocean", "vercel", "netlify",
+        "cloudflare", "docker", "kubernetes", "jenkins", "gitlab", "github actions", "terraform",
+        "ansible", "chef", "puppet", "azure devops", "google kubernetes engine", "amazon ec2", "s3"
+    ],
+    "devops_tools": [
+        "git", "jira", "confluence", "slack", "trello", "postman", "figma", "photoshop",
+        "illustrator", "tableau", "power bi", "excel", "word", "powerpoint", "visio",
+        "jenkins", "travis ci", "circleci", "sonarqube", "nagios", "grafana", "prometheus"
+    ],
+    "operating_systems": [
+        "linux", "windows", "macos", "unix", "ubuntu", "centos", "redhat"
+    ],
+    "soft_skills": [
+        "leadership", "teamwork", "communication", "problem solving", "analytical thinking",
+        "project management", "agile", "scrum", "collaboration", "mentoring", "training",
+        "adaptability", "critical thinking", "creativity", "time management", "negotiation",
+        "conflict resolution", "presentation skills", "interpersonal skills"
+    ],
+    "data_science_ml": [
+        "machine learning", "deep learning", "data analysis", "data visualization", "statistical modeling",
+        "natural language processing", "computer vision", "predictive modeling", "feature engineering",
+        "model deployment", "a/b testing", "big data", "data warehousing", "etl"
+    ],
+    "testing_qa": [
+        "unit testing", "integration testing", "end-to-end testing", "qa automation", "selenium",
+        "jmeter", "load testing", "performance testing", "test plans", "test cases", "bug tracking"
+    ],
+    "security": [
+        "cybersecurity", "network security", "data encryption", "vulnerability assessment",
+        "penetration testing", "firewalls", "identity and access management", "security audits"
+    ],
+    "mobile_development": [
+        "android development", "ios development", "react native", "flutter", "swiftui",
+        "kotlin multiplatform", "xamarin", "ionic", "cordova", "native script"
+    ],
+    "game_development": [
+        "unity", "unreal engine", "cocos2d", "godot", "game design", "3d modeling",
+        "animation", "game physics", "ai in games"
+    ],
+    "blockchain": [
+        "solidity", "ethereum", "smart contracts", "hyperledger", "cryptography",
+        "decentralized applications (dapps)", "nft development"
+    ]
+}

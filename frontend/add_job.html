@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Job Description - ResumeRank</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter (for general text) and Playfair Display (for ResumeRank title) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .logo-header {
+            height: 100px; /* Decreased size */
+            width: auto;
+            margin-right: 1.5rem; /* Adjusted margin for larger logo */
+        }
+        .logo-font {
+            font-family: 'Playfair Display', serif; /* Apply new font to ResumeRank */
+        }
+        /* Styles for nav links are now primarily in style.css */
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white p-6 shadow-md">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <!-- Left Section: Logo and Main Title -->
+            <div class="flex items-center mb-2 sm:mb-0">
+                <img src="/static/images/logo.png" alt="ResumeRank Logo" class="logo-header">
+                <h1 class="text-4xl font-bold logo-font">ResumeRank</h1>
+            </div>
+
+            <!-- Right Section: Navigation -->
+            <div class="flex items-center mt-2 sm:mt-0">
+                <nav>
+                    <ul class="flex space-x-4">
+                        <li><a href="/dashboard" class="nav-link hover:text-indigo-200">Dashboard</a></li>
+                        <li><a href="/add-job" class="current-page-link">Add Job</a></li>
+                        <li><a href="/uploaded-resumes" class="nav-link hover:text-indigo-200">Uploaded Resumes</a></li>
+                        <li><a href="/job-descriptions-page" class="nav-link hover:text-indigo-200">Job Descriptions</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto p-6 flex-grow flex items-center justify-center">
+        <!-- Add Job Description Section -->
+        <section id="add-job-section" class="card bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
+            <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Add New Job Description</h2>
+            <form id="addJobDescriptionForm" class="space-y-6">
+                <div>
+                    <label for="jobTitle" class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                    <input type="text" id="jobTitle" name="title" required
+                           class="input-field" placeholder="e.g., Software Engineer">
+                </div>
+                <div>
+                    <label for="companyName" class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                    <input type="text" id="companyName" name="company" required
+                           class="input-field" placeholder="e.g., Tech Solutions Inc.">
+                </div>
+                <div>
+                    <label for="jobDescriptionText" class="block text-sm font-medium text-gray-700 mb-1">Job Description</label>
+                    <textarea id="jobDescriptionText" name="description" rows="10" required
+                              class="input-field resize-y" placeholder="Paste full job description here..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary w-full">Add Job & Extract Skills</button>
+                <div id="jobStatus" class="mt-4 text-sm font-medium text-center"></div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8 shadow-inner">
+        <p>&copy; 2025 ResumeRank. All rights reserved.</p>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
