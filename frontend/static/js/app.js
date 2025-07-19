@@ -2,8 +2,12 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- API Base URL ---
-    // Make sure this matches your FastAPI backend's address
-    const API_BASE_URL = 'http://localhost:8000/api';
+    // Dynamically set API_BASE_URL based on the current host.
+    // If running locally, it defaults to localhost.
+    // If deployed (e.g., on Render), it will use the deployed backend's URL.
+    const API_BASE_URL = window.location.origin.includes('localhost')
+        ? 'http://localhost:8000/api'
+        : window.location.origin + '/api'; // Assumes API is served under /api on the same domain
 
     // --- Common Elements (conditionally checked for existence on the current page) ---
     const uploadResumeForm = document.getElementById('uploadResumeForm');
@@ -17,16 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const jobDescriptionTextInput = document.getElementById('jobDescriptionText');
     const jobStatus = document.getElementById('jobStatus');
 
-    const jobSelect = document.getElementById('jobSelect'); // Exists only on dashboard.html
-    const matchResumesBtn = document.getElementById('matchResumesBtn'); // Exists only on dashboard.html
-    const matchStatus = document.getElementById('matchStatus'); // Exists only on dashboard.html
-    const matchingResultsDiv = document.getElementById('matchingResults'); // Exists only on dashboard.html
+    const jobSelect = document.getElementById('jobSelect');
+    const matchResumesBtn = document.getElementById('matchResumesBtn');
+    const matchStatus = document.getElementById('matchStatus');
+    const matchingResultsDiv = document.getElementById('matchingResults');
 
-    // These divs exist on multiple pages, so their population logic needs to be careful
-    const resumesListDiv = document.getElementById('resumesList'); // Used on dashboard.html and uploaded_resumes.html
-    const jobDescriptionsListDiv = document.getElementById('jobDescriptionsList'); // Used on dashboard.html and job_descriptions.html
+    const resumesListDiv = document.getElementById('resumesList');
+    const jobDescriptionsListDiv = document.getElementById('jobDescriptionsList');
 
-    // Modals (expected on dashboard.html, uploaded_resumes.html, job_descriptions.html)
+    // Modals
     const resumeDetailsModal = document.getElementById('resumeDetailsModal');
     const jobDetailsModal = document.getElementById('jobDetailsModal');
     const modalResumeFilename = document.getElementById('modalResumeFilename');
@@ -64,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {string} type - 'success', 'error', or 'info' for styling.
      */
     const showStatus = (element, message, type) => {
-        if (!element) return; // Guard against element not existing on current page
+        if (!element) return;
         element.textContent = message;
         element.className = `mt-4 text-sm font-medium ${
             type === 'success' ? 'text-green-700' :
@@ -78,9 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {number} percentage - The percentage to set the progress bar to (0-100).
      */
     const updateProgressBar = (percentage) => {
-        if (uploadProgressBar) { // Guard against element not existing on current page
+        if (uploadProgressBar) {
             uploadProgressBar.style.width = `${percentage}%`;
-            uploadProgressBar.style.setProperty('--progress-width', `${percentage}%`); // For CSS animation
+            uploadProgressBar.style.setProperty('--progress-width', `${percentage}%`);
         }
     };
 
@@ -91,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {string} type - 'matched', 'missing', 'additional' for styling.
      */
     const renderSkillTags = (container, skills, type = '') => {
-        if (!container) return; // Guard against element not existing on current page
-        container.innerHTML = ''; // Clear previous tags
+        if (!container) return;
+        container.innerHTML = '';
         if (skills && skills.length > 0) {
             skills.forEach(skill => {
                 const span = document.createElement('span');
@@ -123,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const resumes = await response.json();
-            resumesListDiv.innerHTML = ''; // Clear previous list
+            resumesListDiv.innerHTML = '';
 
             if (resumes.length === 0) {
                 resumesListDiv.innerHTML = '<p class="text-gray-500">No resumes uploaded yet.</p>';
@@ -182,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {number} resumeId - The ID of the resume to fetch.
      */
     const fetchResumeDetails = async (resumeId) => {
-        if (!resumeDetailsModal) return; // Guard against modal not existing on current page
+        if (!resumeDetailsModal) return;
         try {
             const response = await fetch(`${API_BASE_URL}/resume/${resumeId}`);
             if (!response.ok) {
@@ -193,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modalResumeFilename.textContent = resume.filename;
             renderSkillTags(modalResumeSkills, resume.extracted_skills);
             modalResumeRawText.textContent = resume.raw_text;
-            resumeDetailsModal.classList.add('modal-active'); // Show modal
+            resumeDetailsModal.classList.add('modal-active');
         } catch (error) {
             console.error('Error fetching resume details:', error);
             alert('Failed to load resume details. Check console for more info.');
@@ -217,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(result.message);
             const currentPage = window.location.pathname;
             if (currentPage === '/dashboard' || currentPage === '/uploaded-resumes') {
-                fetchAndDisplayResumes(); // Refresh on dashboard or uploaded resumes page
+                fetchAndDisplayResumes();
             }
         } catch (error) {
             console.error('Error deleting resume:', error);
@@ -231,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * This function is called on the dashboard (dashboard.html) and job_descriptions.html.
      */
     const fetchAndDisplayJobDescriptions = async () => {
-        // This function should only proceed if 'jobDescriptionsListDiv' or 'jobSelect' is actually present.
         if (!jobDescriptionsListDiv && !jobSelect) {
             return;
         }
@@ -243,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const jobs = await response.json();
             
-            if (jobDescriptionsListDiv) { // For the list of all jobs on dashboard.html or job_descriptions.html
+            if (jobDescriptionsListDiv) {
                 jobDescriptionsListDiv.innerHTML = '';
                 if (jobs.length === 0) {
                     jobDescriptionsListDiv.innerHTML = '<p class="text-gray-500">No job descriptions added yet.</p>';
@@ -275,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             await fetchJobDetails(jobId);
                         });
                     });
-                    // Add event listeners for delete job description buttons
                     document.querySelectorAll('.delete-job-btn').forEach(button => {
                         button.addEventListener('click', async (event) => {
                             const jobId = event.target.dataset.jobId;
@@ -287,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            if (jobSelect) { // For the job selection dropdown on dashboard.html
+            if (jobSelect) {
                 jobSelect.innerHTML = '<option value="">-- Select a Job --</option>';
                 jobs.forEach(job => {
                     const option = document.createElement('option');
@@ -313,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {number} jobId - The ID of the job description to fetch.
      */
     const fetchJobDetails = async (jobId) => {
-        if (!jobDetailsModal) return; // Guard
+        if (!jobDetailsModal) return;
         try {
             const response = await fetch(`${API_BASE_URL}/job-description/${jobId}`);
             if (!response.ok) {
@@ -325,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modalJobCompany.textContent = job.company;
             renderSkillTags(modalJobRequiredSkills, job.required_skills);
             modalJobDescriptionText.textContent = job.description;
-            jobDetailsModal.classList.add('modal-active'); // Show modal
+            jobDetailsModal.classList.add('modal-active');
         } catch (error) {
             console.error('Error fetching job details:', error);
             alert('Failed to load job details. Check console for more info.');
@@ -349,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(result.message);
             const currentPage = window.location.pathname;
             if (currentPage === '/dashboard' || currentPage === '/job-descriptions-page') {
-                fetchAndDisplayJobDescriptions(); // Refresh on dashboard or job descriptions page
+                fetchAndDisplayJobDescriptions();
             }
         } catch (error) {
             console.error('Error deleting job description:', error);
@@ -392,7 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 uploadResumeForm.reset();
                 const currentPage = window.location.pathname;
                 if (currentPage === '/dashboard') {
-                    fetchAndDisplayResumes(); // Optionally refresh resumes on dashboard if needed
+                    // Optionally refresh resumes on dashboard if needed, but it's now on a separate page
+                    // fetchAndDisplayResumes();
                 }
             } catch (error) {
                 console.error('Error uploading resume:', error);
@@ -532,10 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Check if on the dashboard page
     else if (currentPage === '/dashboard') {
-        // Dashboard needs job descriptions for the dropdown and list
-        fetchAndDisplayJobDescriptions();
-        // It also needs resumes for the upload section's list (if you put it back)
-        // For now, it only has the upload form and match section
+        fetchAndDisplayJobDescriptions(); // Dashboard needs job descriptions for the dropdown and list
     }
     // Check if on the Add Job page
     else if (currentPage === '/add-job' || currentPage === '/add_job.html') {
