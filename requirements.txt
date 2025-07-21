@@ -33,3 +33,6 @@ python-levenshtein
 # Development
 pytest
 python-dotenv
+passlib[bcrypt]
+python-jose[cryptography]
+gunicorn

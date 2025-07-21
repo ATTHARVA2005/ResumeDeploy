@@ -40,7 +40,8 @@
     "data_science_ml": [
         "machine learning", "deep learning", "data analysis", "data visualization", "statistical modeling",
         "natural language processing", "computer vision", "predictive modeling", "feature engineering",
-        "model deployment", "a/b testing", "big data", "data warehousing", "etl"
+        "model deployment", "a/b testing", "big data", "data warehousing", "etl", "artificial intelligence",
+        "neural networks", "reinforcement learning", "clustering", "regression analysis"
     ],
     "testing_qa": [
         "unit testing", "integration testing", "end-to-end testing", "qa automation", "selenium",

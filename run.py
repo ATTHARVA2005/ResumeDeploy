@@ -6,6 +6,8 @@ import sys
 import json
 from pathlib import Path
 
+print("App running on http://localhost:8000/")
+
 # Add the project root directory to the Python path
 # This ensures that 'backend' can be imported as a top-level package by uvicorn
 sys.path.insert(0, str(Path(__file__).resolve().parent))
