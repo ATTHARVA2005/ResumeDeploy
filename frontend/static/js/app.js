@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration & Page Protection ---
-    const API_BASE_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api' : `${window.location.origin}/api`;
+    const API_BASE_URL = 'https://resumerank-api.onrender.com/api'; 
+// IMPORTANT: Replace "resumerank-api.onrender.com" with your actual backend URL!
     const token = localStorage.getItem('user_token');
     const currentPage = window.location.pathname;
     

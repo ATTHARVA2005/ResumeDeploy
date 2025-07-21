@@ -11,19 +11,6 @@ from pathlib import Path
 from pdfminer.high_level import extract_text as pdf_extract_text
 from docx import Document
 
-# Attempt to import textract, but make it optional
-try:
-    import textract
-    TEXTRACT_AVAILABLE = True
-except ImportError:
-    print("Warning: 'textract' library not found. Falling back to textract for other file formats will be disabled.")
-    print("If you need .doc or other formats supported by textract, please install it (e.g., pip install textract).")
-    TEXTRACT_AVAILABLE = False
-except Exception as e:
-    print(f"Warning: An unexpected error occurred while importing 'textract': {e}. Fallback extraction disabled.")
-    TEXTRACT_AVAILABLE = False
-
-
 class ResumeParser:
     def __init__(self):
         pass
