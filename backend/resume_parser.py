@@ -108,7 +108,7 @@ class ResumeParser: # Keeping the class name as ResumeParser for now, can be ren
         Returns:
             Dict[str, Any]: A dictionary containing structured resume data.
         """
-        model = genai.GenerativeModel('gemma-3-27b-it')
+        model = genai.GenerativeModel('gemma-3-12b-it')
 
         json_schema = """
         {
@@ -192,7 +192,7 @@ class ResumeParser: # Keeping the class name as ResumeParser for now, can be ren
         Returns:
             Dict[str, Any]: A dictionary containing structured job requirements data.
         """
-        model = genai.GenerativeModel('gemma-3-27b-it')
+        model = genai.GenerativeModel('gemma-3-12b-it')
 
         json_schema = """
         {          
