@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from fuzzywuzzy import fuzz
 import numpy as np
+import re # Added regex module for major normalization
 
 class SkillMatcher:
     def __init__(self):
@@ -15,7 +16,7 @@ class SkillMatcher:
             ngram_range=(1, 2)
         )
         # Define a simple hierarchy for education levels
-        self.education_hierarchy = {
+        self.education_hierarchy = { # Added for education matching
             "phd": 5, "doctorate": 5,
             "master": 4, "m.s": 4, "msc": 4,
             "bachelor": 3, "b.s": 3, "btech": 3,
@@ -28,10 +29,10 @@ class SkillMatcher:
                         resume_experience_years: Optional[int] = None,
                         job_required_experience_years: Optional[int] = None,
                         job_required_certifications: Optional[List[str]] = None,
-                        resume_highest_education_level: Optional[str] = None, # NEW
-                        resume_major: Optional[str] = None, # NEW
-                        job_required_education_level: Optional[str] = None, # NEW
-                        job_required_major: Optional[str] = None # NEW
+                        resume_highest_education_level: Optional[str] = None, # Added for education matching
+                        resume_major: Optional[str] = None, # Added for education matching
+                        job_required_education_level: Optional[str] = None, # Added for education matching
+                        job_required_major: Optional[str] = None # Added for education matching
                        ) -> Dict[str, Any]:
         """
         Calculate a comprehensive match between resume and job requirements.
@@ -89,12 +90,12 @@ class SkillMatcher:
 
         # --- 3. Certifications Matching ---
         certifications_score = self._calculate_certifications_score(
-            resume_skills, # Using resume_skills as a proxy for certifications mentioned in resume
+            resume_skills,
             job_required_certifications
         )
 
         # --- 4. Education Matching (NEW) ---
-        education_score = self._calculate_education_score(
+        education_score = self._calculate_education_score( # Call to new method
             resume_highest_education_level=resume_highest_education_level,
             resume_major=resume_major,
             job_required_education_level=job_required_education_level,
@@ -103,10 +104,10 @@ class SkillMatcher:
 
         # --- 5. Combine Overall Score ---
         # Assign weights to different match aspects
-        WEIGHT_SKILLS = 0.60 # Decreased to make space for education
+        WEIGHT_SKILLS = 0.60 # Adjusted weight
         WEIGHT_EXPERIENCE = 0.20
         WEIGHT_CERTIFICATIONS = 0.10
-        WEIGHT_EDUCATION = 0.10 # NEW Weight for education
+        WEIGHT_EDUCATION = 0.10 # New weight for education
 
         # Normalize weights to sum to 1
         total_weight = WEIGHT_SKILLS + WEIGHT_EXPERIENCE + WEIGHT_CERTIFICATIONS + WEIGHT_EDUCATION
@@ -115,7 +116,7 @@ class SkillMatcher:
             (skill_overall_score * WEIGHT_SKILLS) +
             (experience_score * WEIGHT_EXPERIENCE) +
             (certifications_score * WEIGHT_CERTIFICATIONS) +
-            (education_score * WEIGHT_EDUCATION) # NEW: Add education score
+            (education_score * WEIGHT_EDUCATION) # Add education score
         ) / total_weight
 
         overall_score = max(0.0, min(100.0, overall_score))
@@ -129,14 +130,14 @@ class SkillMatcher:
                 **skill_match_details,
                 'experience_score': round(experience_score, 2),
                 'certifications_score': round(certifications_score, 2),
-                'education_score': round(education_score, 2), # NEW
+                'education_score': round(education_score, 2), # Add education score to details
                 'resume_exp_years': resume_experience_years,
                 'job_req_exp_years': job_required_experience_years,
                 'job_req_certs': job_required_certifications,
-                'resume_highest_edu': resume_highest_education_level, # NEW
-                'resume_major': resume_major, # NEW
-                'job_req_edu': job_required_education_level, # NEW
-                'job_req_major': job_required_major # NEW
+                'resume_highest_edu': resume_highest_education_level, # Add edu details
+                'resume_major': resume_major, # Add edu details
+                'job_req_edu': job_required_education_level, # Add edu details
+                'job_req_major': job_required_major # Add edu details
             }
         }
     
@@ -152,11 +153,11 @@ class SkillMatcher:
         matched_skills = set()
         for job_skill in job_skills_lower:
             for resume_skill in resume_skills_lower:
-                if job_skill == resume_skill: continue # Skip exact matches handled by _find_exact_matches
+                if job_skill == resume_skill: continue
                 similarity = fuzz.ratio(job_skill, resume_skill)
                 if similarity >= threshold:
                     matched_skills.add(job_skill)
-                    break # Found a fuzzy match for this job_skill, move to next
+                    break
         return {'matched': list(matched_skills), 'score': len(matched_skills) / len(job_skills_lower) if job_skills_lower else 0.0}
     
     def _find_semantic_matches(self, resume_skills: List[str], job_skills: List[str], threshold: float = 0.3) -> Dict[str, Any]:
@@ -168,11 +169,6 @@ class SkillMatcher:
             all_unique_skills = list(set(resume_skills + job_skills))
             if not all_unique_skills: return {'matched': [], 'score': 0.0}
 
-            # If the vectorizer has not been fitted, fit it with all skills from both resume and job
-            # This ensures consistent vector space for similarity calculation
-            # Note: For production, pre-fitting TFIDF on a large corpus of skills is more robust
-            # For dynamic fitting, ensure it happens only once per match operation or batch.
-            # Here, it's safer to re-fit if skills vary wildly.
             self.tfidf_vectorizer.fit(all_unique_skills)
             
             job_skill_vectors = self.tfidf_vectorizer.transform(job_skills)
@@ -180,10 +176,8 @@ class SkillMatcher:
 
             matched_skills = set()
             for i, job_skill_vec in enumerate(job_skill_vectors):
-                # Skip if job skill vector is all zeros (e.g., common stop word or very short skill)
                 if job_skill_vec.nnz == 0: continue
 
-                # Calculate cosine similarity between current job skill and all resume skills
                 similarities = cosine_similarity(job_skill_vec, resume_skill_vectors)
                 
                 if similarities.size > 0:
@@ -206,9 +200,7 @@ class SkillMatcher:
             return 0.0
         
         base_score = (matched_count / total_job_skills) * 100
-        # Bonus for having more skills than required (up to 5 points)
         skill_abundance_bonus = min((total_resume_skills - total_job_skills) * 0.5, 5.0) if total_resume_skills > total_job_skills else 0.0
-        # Penalty for matching less than 50% of required skills
         missing_penalty = (total_job_skills * 0.5 - matched_count) * 1.0 if matched_count < (total_job_skills * 0.5) else 0.0
 
         final_score = base_score + skill_abundance_bonus - missing_penalty
@@ -222,9 +214,9 @@ class SkillMatcher:
         job_req_exp_years = job_req_exp_years if job_req_exp_years is not None else 0
 
         if job_req_exp_years == 0:
-            return 100.0 # If job requires 0 experience, always a perfect match
+            return 100.0
         if resume_exp_years >= job_req_exp_years:
-            return 100.0 # If resume meets or exceeds requirement, perfect match
+            return 100.0
         else:
             score = (resume_exp_years / job_req_exp_years) * 100
             return max(0.0, min(100.0, score))
@@ -234,35 +226,47 @@ class SkillMatcher:
                                         job_required_certifications: Optional[List[str]]) -> float:
         """Calculates a score based on matching certifications."""
         if not job_required_certifications:
-            return 100.0 # No certifications required, so perfect score
+            return 100.0
         if not resume_skills:
-            return 0.0 # Certifications required but resume has no skills/certs listed
+            return 0.0
 
         resume_skills_lower = {s.lower() for s in resume_skills}
         job_certs_lower = {c.lower() for c in job_required_certifications}
 
         if not job_certs_lower:
-            return 100.0 # Should be caught by first check, but for safety
+            return 100.0
         
         matched_certs = resume_skills_lower.intersection(job_certs_lower)
         score = (len(matched_certs) / len(job_certs_lower)) * 100
         return max(0.0, min(100.0, score))
 
-    def _calculate_education_score(self,
+    def _calculate_education_score(self, # New method for education matching
                                    resume_highest_education_level: Optional[str],
                                    resume_major: Optional[str],
                                    job_required_education_level: Optional[str],
                                    job_required_major: Optional[str]) -> float:
         """
-        Calculates a score based on matching education level and major.
+        Calculates a score based on matching education level and major,
+        ignoring specializations in parentheses for major comparison.
         """
         score = 0.0
         
         resume_edu_level_norm = (resume_highest_education_level or "none").lower().replace(" ", "")
         job_req_edu_level_norm = (job_required_education_level or "none").lower().replace(" ", "")
 
-        resume_major_norm = (resume_major or "").lower().strip()
-        job_req_major_norm = (job_required_major or "").lower().strip()
+        # NEW: Normalize majors by removing text in parentheses
+        def normalize_major(major_str: Optional[str]) -> str:
+            if not major_str:
+                return ""
+            # Remove text in parentheses
+            cleaned_major = re.sub(r'\s*\(.*?\)\s*', '', major_str).strip()
+            # Handle common abbreviations or variations if necessary (e.g., "CS" vs "Computer Science")
+            if cleaned_major.lower() == "cs": return "computer science"
+            if cleaned_major.lower() == "ee": return "electrical engineering"
+            return cleaned_major.lower()
+
+        resume_major_normalized = normalize_major(resume_major) # Apply normalization
+        job_req_major_normalized = normalize_major(job_required_major) # Apply normalization
 
         # Score based on education level hierarchy
         resume_level_val = self.education_hierarchy.get(resume_edu_level_norm, 0)
@@ -279,15 +283,19 @@ class SkillMatcher:
             score += (resume_level_val / job_req_level_val) * 70.0
         
         # Adjust score based on major match (if a major is specified by the job)
-        if job_req_major_norm:
+        if job_req_major_normalized: # Use normalized major here
             major_match_score = 0.0
-            if resume_major_norm and fuzz.partial_ratio(job_req_major_norm, resume_major_norm) > 80:
-                major_match_score = 100.0 # Good fuzzy match on major
-            elif resume_major_norm and job_req_major_norm in resume_major_norm: # Exact substring match
+            # Check for direct or fuzzy match on normalized majors
+            if resume_major_normalized == job_req_major_normalized:
                 major_match_score = 100.0
-            
+            elif fuzz.ratio(job_req_major_normalized, resume_major_normalized) > 85: # High fuzzy match
+                major_match_score = 90.0
+            elif fuzz.partial_ratio(job_req_major_normalized, resume_major_normalized) > 90: # Partial match for broader terms
+                major_match_score = 80.0
+            elif job_req_major_normalized in resume_major_normalized or resume_major_normalized in job_req_major_normalized: # Catch cases like "Computer Science" being part of "Applied Computer Science"
+                major_match_score = 70.0
+
             # Combine major match with education level score. For example, 70% level, 30% major.
-            # This is a simple proportional merge. You can adjust weights.
             score = (score * 0.7) + (major_match_score * 0.3)
         
         return max(0.0, min(100.0, score))
