@@ -42,8 +42,12 @@ class Resume(Base):
     extracted_skills = Column(String)
     upload_date = Column(DateTime, default=datetime.now)
     experience = Column(Text, default="[]")
-    education = Column(Text, default="[]")
+    # Removed education column as it's no longer a detailed list
+    # education = Column(Text, default="[]")
     total_years_experience = Column(Integer, default=0)
+    # NEW: Columns for highest education level and major
+    highest_education_level = Column(String, nullable=True)
+    major = Column(String, nullable=True)
     
     # Link to the user who owns this resume
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -62,6 +66,9 @@ class Job(Base):
     created_date = Column(DateTime, default=datetime.now)
     required_experience_years = Column(Integer, default=None)
     required_certifications = Column(Text, default="[]")
+    # NEW: Columns for required education level and major
+    required_education_level = Column(String, nullable=True)
+    required_major = Column(String, nullable=True)
     
     # Link to the user who owns this job description
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -84,8 +91,6 @@ class MatchResult(Base):
     job = relationship("Job", back_populates="match_results")
 
 # --- Database Operations Class ---
-# backend/database.py -> Replace the entire Database class
-
 class Database:
     def init_database(self):
         try:
@@ -109,12 +114,17 @@ class Database:
     # --- Resume Operations ---
     def save_resume(self, db: Any, filename: str, file_path: str, raw_text: str, 
                     extracted_skills: List[str], user_id: int, experience: Optional[List[Dict]] = None, 
-                    education: Optional[List[Dict]] = None, total_years_experience: Optional[int] = 0) -> int:
+                    total_years_experience: Optional[int] = 0, # Removed education
+                    highest_education_level: Optional[str] = None, # NEW
+                    major: Optional[str] = None # NEW
+                    ) -> int:
         db_resume = Resume(
             filename=filename, file_path=file_path, raw_text=raw_text,
             extracted_skills=json.dumps(extracted_skills), user_id=user_id,
-            experience=json.dumps(experience or []), education=json.dumps(education or []),
-            total_years_experience=total_years_experience
+            experience=json.dumps(experience or []), # Removed education
+            total_years_experience=total_years_experience,
+            highest_education_level=highest_education_level, # NEW
+            major=major # NEW
         )
         db.add(db_resume)
         db.commit()
@@ -122,18 +132,23 @@ class Database:
         return db_resume.id
 
     def get_all_resumes_for_user(self, db: Any, user_id: int) -> List[Resume]:
-        # CORRECTED: Return the raw SQLAlchemy objects, not dicts
         return db.query(Resume).filter(Resume.user_id == user_id).order_by(Resume.upload_date.desc()).all()
 
     # --- Job Description Operations ---
     def save_job_description(self, db: Any, title: str, company: str, description: str, 
-                             required_skills: List[str], user_id: int, required_experience_years: Optional[int] = None,
-                             required_certifications: Optional[List[str]] = None) -> int:
+                             required_skills: List[str], user_id: int, 
+                             required_experience_years: Optional[int] = None,
+                             required_certifications: Optional[List[str]] = None,
+                             required_education_level: Optional[str] = None, # NEW
+                             required_major: Optional[str] = None # NEW
+                             ) -> int:
         db_job = Job(
             title=title, company=company, description=description,
             required_skills=json.dumps(required_skills), user_id=user_id,
             required_experience_years=required_experience_years,
-            required_certifications=json.dumps(required_certifications or [])
+            required_certifications=json.dumps(required_certifications or []),
+            required_education_level=required_education_level, # NEW
+            required_major=required_major # NEW
         )
         db.add(db_job)
         db.commit()
@@ -141,5 +156,4 @@ class Database:
         return db_job.id
 
     def get_all_job_descriptions_for_user(self, db: Any, user_id: int) -> List[Job]:
-        # CORRECTED: Return the raw SQLAlchemy objects, not dicts
         return db.query(Job).filter(Job.user_id == user_id).order_by(Job.created_date.desc()).all()

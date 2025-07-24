@@ -1,7 +1,7 @@
 # backend/models.py
 
 from pydantic import BaseModel, Field, validator, ConfigDict
-from typing import List, Dict, Optional, Any # CORRECTED THIS LINE
+from typing import List, Dict, Optional, Any
 from datetime import datetime
 import json
 
@@ -22,12 +22,6 @@ class ExperienceEntry(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     description: Optional[str] = None
-
-class EducationEntry(BaseModel):
-    degree: Optional[str] = None
-    major: Optional[str] = None
-    institution: Optional[str] = None
-    graduation_date: Optional[str] = None
 
 # --- User Models ---
 class UserBase(BaseModel):
@@ -50,12 +44,12 @@ class TokenData(BaseModel):
 
 # --- API Models ---
 class JobDescription(BaseModel):
+    # Simplified: Only 'title', 'company', and 'description' are input by the user.
+    # Other fields are now extracted by Gemini from the 'description'.
     title: str
     company: str
     description: str
-    required_experience_years: Optional[int] = None
-    required_skills: Optional[List[str]] = Field(default_factory=list)
-    required_certifications: Optional[List[str]] = Field(default_factory=list)
+
 
 class Resume(BaseModel):
     id: int
@@ -63,17 +57,19 @@ class Resume(BaseModel):
     raw_text: str
     upload_date: Optional[datetime] = None
     experience: Optional[List[ExperienceEntry]] = []
-    education: Optional[List[EducationEntry]] = []
     total_years_experience: Optional[int] = 0
     extracted_skills: List[str] = []
+    highest_education_level: Optional[str] = None
+    major: Optional[str] = None
 
     _parse_experience = validator('experience', pre=True, allow_reuse=True)(parse_json_string)
-    _parse_education = validator('education', pre=True, allow_reuse=True)(parse_json_string)
     _parse_extracted_skills = validator('extracted_skills', pre=True, allow_reuse=True)(parse_json_string)
 
     model_config = ConfigDict(from_attributes=True)
         
 class Job(BaseModel):
+    # This model represents the Job data as stored in the database,
+    # including all the fields extracted by Gemini from the job description.
     id: int
     title: str
     company: str
@@ -82,6 +78,9 @@ class Job(BaseModel):
     created_date: Optional[datetime] = None
     required_experience_years: Optional[int] = None
     required_certifications: List[str] = []
+    required_education_level: Optional[str] = None
+    required_major: Optional[str] = None
+
 
     _parse_required_skills = validator('required_skills', pre=True, allow_reuse=True)(parse_json_string)
     _parse_required_certifications = validator('required_certifications', pre=True, allow_reuse=True)(parse_json_string)

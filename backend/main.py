@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 import os
 import json
@@ -13,8 +13,8 @@ from datetime import timedelta
 
 # Import all necessary modules
 from . import models, database, auth
-from .resume_parser import ResumeParser
-from .skill_extractor import SkillExtractor
+from .resume_parser import ResumeParser # Updated usage for ResumeParser
+# REMOVED: from .skill_extractor import SkillExtractor (as it's being removed)
 from .matcher import SkillMatcher
 from .utils import save_upload_file, delete_file, FileValidator
 
@@ -37,8 +37,8 @@ def startup_event():
     print("Database startup complete.")
 
 # --- Instantiated Classes ---
-resume_parser = ResumeParser()
-skill_extractor = SkillExtractor()
+resume_parser = ResumeParser() # Instance of our updated ResumeParser
+# REMOVED: skill_extractor = SkillExtractor() (as it's being removed)
 matcher = SkillMatcher()
 
 UPLOADS_DIR = "uploads"
@@ -110,25 +110,46 @@ async def upload_resume(
     is_valid, message = FileValidator.is_valid_file(file)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
+    
     file_path = None
     try:
+        # Save the uploaded file temporarily to extract text
         file_path = await save_upload_file(file, UPLOADS_DIR)
-        parsed_data = resume_parser.parse_resume(resume_parser.extract_text(file_path))
-        extracted_skills = skill_extractor.extract_skills(parsed_data.get('cleaned_text', ''))
         
+        # Extract raw text using local parser
+        raw_text = resume_parser.extract_text(file_path)
+        
+        # Use Gemini to parse and structure the extracted text
+        parsed_data_from_gemini = await resume_parser.parse_text_with_gemini(raw_text)
+        
+        # Extract data fields from Gemini's structured output
+        filename_to_save = file.filename # Use original filename for record
+        extracted_skills = parsed_data_from_gemini.get('extracted_skills', [])
+        experience_entries = parsed_data_from_gemini.get('experience', [])
+        total_years_experience = parsed_data_from_gemini.get('total_years_experience', 0)
+        highest_education_level = parsed_data_from_gemini.get('highest_education_level', None)
+        major = parsed_data_from_gemini.get('major', None)
+
         resume_id = db_operations.save_resume(
             db=db, user_id=current_user.id,
-            filename=file.filename, file_path=file_path,
-            raw_text=parsed_data.get('raw_text', ''),
+            filename=filename_to_save,
+            file_path=file_path, # Store the path to the temporary file for now
+            raw_text=raw_text, # Store the raw text that Gemini processed
             extracted_skills=extracted_skills,
-            experience=parsed_data.get('experience', []),
-            education=parsed_data.get('education', []),
-            total_years_experience=parsed_data.get('total_years_experience', 0)
+            experience=experience_entries,
+            total_years_experience=total_years_experience,
+            highest_education_level=highest_education_level,
+            major=major
         )
-        return {"status": "success", "message": "Resume uploaded successfully.", "resume_id": resume_id}
+        return {"status": "success", "message": "Resume uploaded and processed successfully.", "resume_id": resume_id}
     except Exception as e:
+        # It's crucial to delete the temporary file even if an error occurs
+        if file_path and os.path.exists(file_path): delete_file(file_path)
+        print(f"Error processing resume: {str(e)}") # Log the error for debugging
         raise HTTPException(status_code=500, detail=f"Error processing resume: {str(e)}")
     finally:
+        # Ensure temporary file is deleted after processing (success or failure)
+        # This will delete the file immediately after its content is read and processed by Gemini
         if file_path and os.path.exists(file_path): delete_file(file_path)
 
 @app.get("/api/resumes", response_model=List[models.Resume])
@@ -163,6 +184,10 @@ async def delete_resume(
     if resume_db.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this resume.")
     
+    # Also delete the associated file if it exists and still points to a local file
+    if resume_db.file_path and os.path.exists(resume_db.file_path):
+        delete_file(resume_db.file_path)
+
     db.delete(resume_db)
     db.commit()
     return {"status": "success", "message": "Resume deleted successfully."}
@@ -170,18 +195,25 @@ async def delete_resume(
 # --- PROTECTED: Job Description Endpoints ---
 @app.post("/api/job-description", response_model=dict)
 async def add_job_description(
-    job_desc: models.JobDescription,
+    job_desc: models.JobDescription, # Simplified Pydantic model now
     current_user: Annotated[models.User, Depends(auth.get_current_user)],
     db: Annotated[Session, Depends(auth.get_db_session)]
 ):
-    required_skills = skill_extractor.extract_skills(job_desc.description)
+    # Use Gemini to parse and structure the job description
+    parsed_job_data_from_gemini = await resume_parser.parse_job_description_with_gemini(job_desc.description)
+
     job_id = db_operations.save_job_description(
         db=db, user_id=current_user.id,
-        title=job_desc.title, company=job_desc.company, description=job_desc.description,
-        required_skills=required_skills, required_experience_years=job_desc.required_experience_years,
-        required_certifications=job_desc.required_certifications
+        title=parsed_job_data_from_gemini.get('title', job_desc.title), # Use Gemini's title, fallback to user input
+        company=parsed_job_data_from_gemini.get('company', job_desc.company), # Use Gemini's company, fallback to user input
+        description=job_desc.description, # Keep the original description
+        required_skills=parsed_job_data_from_gemini.get('required_skills', []),
+        required_experience_years=parsed_job_data_from_gemini.get('required_experience_years', 0),
+        required_certifications=parsed_job_data_from_gemini.get('required_certifications', []),
+        required_education_level=parsed_job_data_from_gemini.get('required_education_level', None),
+        required_major=parsed_job_data_from_gemini.get('required_major', None)
     )
-    return {"status": "success", "message": "Job description added successfully.", "job_id": job_id}
+    return {"status": "success", "message": "Job description added and processed successfully.", "job_id": job_id}
 
 @app.get("/api/job-descriptions", response_model=List[models.Job])
 async def get_all_job_descriptions_for_current_user(
@@ -190,7 +222,7 @@ async def get_all_job_descriptions_for_current_user(
 ):
     return db_operations.get_all_job_descriptions_for_user(db, user_id=current_user.id)
 
-# --- ADDED: Endpoints for managing a single job ---
+# --- Endpoints for managing a single job ---
 
 @app.get("/api/job-description/{job_id}", response_model=models.Job)
 async def get_job_description_details(
@@ -208,7 +240,7 @@ async def get_job_description_details(
 @app.put("/api/job-description/{job_id}", response_model=models.Job)
 async def update_job_description(
     job_id: int,
-    job_desc: models.JobDescription,
+    job_desc: models.JobDescription, # Simplified Pydantic model now
     current_user: Annotated[models.User, Depends(auth.get_current_user)],
     db: Annotated[Session, Depends(auth.get_db_session)]
 ):
@@ -218,14 +250,19 @@ async def update_job_description(
     if job_db.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this job.")
 
-    # Update fields
-    job_db.title = job_desc.title
-    job_db.company = job_desc.company
-    job_db.description = job_desc.description
-    job_db.required_experience_years = job_desc.required_experience_years
-    job_db.required_certifications = json.dumps(job_desc.required_certifications or [])
-    # Optionally re-extract skills if description changes
-    job_db.required_skills = json.dumps(skill_extractor.extract_skills(job_desc.description))
+    # Use Gemini to re-parse and structure the updated job description
+    parsed_job_data_from_gemini = await resume_parser.parse_job_description_with_gemini(job_desc.description)
+
+    # Update fields from Gemini's output
+    job_db.title = parsed_job_data_from_gemini.get('title', job_desc.title) # Use Gemini's title, fallback to user input
+    job_db.company = parsed_job_data_from_gemini.get('company', job_desc.company) # Use Gemini's company, fallback to user input
+    job_db.description = job_desc.description # Keep the original description
+    job_db.required_experience_years = parsed_job_data_from_gemini.get('required_experience_years', 0)
+    job_db.required_certifications = json.dumps(parsed_job_data_from_gemini.get('required_certifications', []))
+    job_db.required_education_level = parsed_job_data_from_gemini.get('required_education_level', None)
+    job_db.required_major = parsed_job_data_from_gemini.get('major', None)
+
+    job_db.required_skills = json.dumps(parsed_job_data_from_gemini.get('required_skills', []))
     
     db.commit()
     db.refresh(job_db)
@@ -246,8 +283,6 @@ async def delete_job_description(
     db.delete(job_db)
     db.commit()
     return {"status": "success", "message": "Job description deleted successfully."}
-
-# Add this new function to the end of backend/main.py
 
 @app.post("/api/match-resumes", response_model=List[models.MatchResultResponse])
 async def match_resumes_for_user(
@@ -279,7 +314,11 @@ async def match_resumes_for_user(
             job_skills=job.required_skills,
             resume_experience_years=resume.total_years_experience,
             job_required_experience_years=job.required_experience_years,
-            job_required_certifications=job.required_certifications
+            job_required_certifications=job.required_certifications,
+            resume_highest_education_level=resume.highest_education_level,
+            resume_major=resume.major,
+            job_required_education_level=job.required_education_level,
+            job_required_major=job.required_major
         )
         
         all_match_results.append(models.MatchResultResponse(

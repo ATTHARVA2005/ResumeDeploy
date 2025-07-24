@@ -31,6 +31,11 @@
         <section id="uploaded-resumes-list-section" class="card bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">All Uploaded Resumes</h2>
             <div id="resumesList" class="space-y-4">
+                <div id="resumesEmptyState" class="empty-state hidden">
+                    <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6H16a2 2 0 012 2v1H6l-2 4h4l-2 4h4a2 2 0 01-2 2H4a2 2 0 01-2-2z"></path></svg>
+                    <p class="empty-state-title">No Resumes Uploaded</p>
+                    <p class="empty-state-description">Upload your first resume from the <a href="/dashboard" class="text-indigo-600 hover:text-indigo-500 font-medium">Dashboard</a> to get started!</p>
+                </div>
                 <p class="text-gray-500">Loading resumes...</p>
             </div>
         </section>
@@ -41,6 +46,9 @@
             <span class="close-button">&times;</span>
             <h3 class="text-2xl font-bold text-indigo-800 mb-4">Resume Details</h3>
             <p class="text-lg font-semibold text-gray-700 mb-2">Filename: <span id="modalResumeFilename" class="font-normal text-gray-600"></span></p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Total Years Experience: <span id="modalResumeTotalYearsExperience" class="font-normal text-gray-600"></span></p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Highest Education Level: <span id="modalResumeHighestEducationLevel" class="font-normal text-gray-600"></span></p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Major: <span id="modalResumeMajor" class="font-normal text-gray-600"></span></p>
             <div class="mb-4">
                 <p class="font-semibold text-gray-700 mb-1">Extracted Skills:</p>
                 <div id="modalResumeSkills" class="flex flex-wrap gap-2"></div>
@@ -48,10 +56,6 @@
             <div class="mb-4">
                 <p class="font-semibold text-gray-700 mb-1">Extracted Experience:</p>
                 <div id="modalResumeExperience" class="space-y-2 text-sm text-gray-800"></div>
-            </div>
-            <div class="mb-4">
-                <p class="font-semibold text-gray-700 mb-1">Extracted Education:</p>
-                <div id="modalResumeEducation" class="space-y-2 text-sm text-gray-800"></div>
             </div>
             <div>
                 <p class="font-semibold text-gray-700 mb-1">Raw Text Preview:</p>

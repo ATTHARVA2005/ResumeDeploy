@@ -5,6 +5,10 @@ import os
 import sys
 import json
 from pathlib import Path
+from dotenv import load_dotenv # NEW: Import load_dotenv
+
+# NEW: Load environment variables from .env file
+load_dotenv()
 
 print("App running on http://localhost:8000/")
 
@@ -85,7 +89,7 @@ def ensure_skills_database():
                 "penetration testing", "firewalls", "identity and access management", "security audits"
             ]
         }
-        with open(skills_path, 'w', encoding='utf-8') as f: # Added encoding
+        with open(skills_path, 'w', encoding='utf-8') as f:
             json.dump(default_skills, f, indent=4)
         print("Default skills_database.json created.")
 
@@ -117,7 +121,7 @@ def ensure_sample_job_descriptions():
                 "description": "Creative UI Labs seeks a skilled Frontend Developer with a strong focus on React.js. Candidates must be proficient in JavaScript, HTML, CSS, and modern frontend frameworks. Experience with Redux, Webpack, and responsive design is required. Familiarity with RESTful APIs, Git, and UI/UX principles is beneficial. Excellent teamwork and problem-solving skills are highly valued."
             }
         ]
-        with open(jobs_path, 'w', encoding='utf-8') as f: # Added encoding
+        with open(jobs_path, 'w', encoding='utf-8') as f:
             json.dump(default_jobs, f, indent=4)
         print("Default sample_job_descriptions.json created.")
 
@@ -129,7 +133,4 @@ if __name__ == "__main__":
     ensure_sample_job_descriptions()
 
     # Run the FastAPI application
-    # IMPORTANT CHANGE: Specify the app as 'backend.main:app'
-    # This tells uvicorn that 'main' is inside the 'backend' package.
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
-    # Removed app_dir="backend" as it's redundant/can conflict when using full module path

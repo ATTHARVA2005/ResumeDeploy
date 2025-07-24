@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to ResumeRank</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Welcome to ResumeRank - Your Smart AI Recruitment Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter (for general text) and Playfair Display (for ResumeRank title) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -28,12 +26,15 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
+            padding-top: 4rem; /* Add some padding from header */
+            padding-bottom: 4rem;
         }
         .hero-content {
             z-index: 10;
             position: relative;
             text-align: center;
             padding: 2rem;
+            max-width: 900px; /* Wider for more content */
         }
         .hero-title {
             font-family: 'Playfair Display', serif;
@@ -42,6 +43,7 @@
             color: #ffffff;
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
             animation: fadeInDown 1s ease-out;
+            margin-bottom: 1rem;
         }
         .hero-tagline {
             font-size: 1.5rem;
@@ -49,25 +51,53 @@
             margin-top: 1rem;
             animation: fadeInUp 1s ease-out 0.3s forwards;
             opacity: 0;
+            font-weight: 300; /* Lighter font weight */
+            margin-bottom: 2rem;
         }
+        /* REMOVED: .rotating-tagline-container and .rotating-tagline CSS */
+        /* REMOVED: @keyframes fadeInOut */
+
         .get-started-btn {
             display: inline-block;
-            margin: 2rem auto; /* Centered margin */
-            padding: 1rem 2.5rem;
+            margin: 2.5rem auto 1.5rem auto; /* More margin */
+            padding: 1.25rem 3rem; /* Larger padding */
             background-color: #ffffff;
             color: #6366f1;
             font-weight: 700;
+            font-size: 1.25rem; /* Larger text */
             border-radius: 9999px; /* Fully rounded */
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
             animation: zoomIn 0.8s ease-out 0.6s forwards;
             opacity: 0;
+            position: relative; /* For pulse effect */
         }
         .get-started-btn:hover {
             background-color: #e0e7ff;
             transform: translateY(-5px) scale(1.05);
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
         }
+        /* Pulse animation for the button */
+        .get-started-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            border-radius: 9999px;
+            background-color: #ffffff;
+            opacity: 0.4;
+            transform: translate(-50%, -50%) scale(1);
+            animation: pulse 2s infinite;
+            z-index: -1;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+        }
+
 
         /* Background Animations */
         .animated-bg-shapes {
@@ -111,6 +141,39 @@
             100% { transform: translate(0, 0) scale(1); }
         }
 
+        /* Feature Section Styling */
+        .features-section {
+            background-color: #0f172a; /* Same as body background */
+            padding: 4rem 0;
+            text-align: center;
+        }
+        .feature-card {
+            background-color: #1a2235; /* Slightly lighter dark */
+            border-radius: 0.75rem;
+            /* ADJUSTED PADDING TO BE MORE COMPACT */
+            padding: 1.5rem; /* Reduced from 2rem */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            display: flex; /* Use flexbox for vertical centering */
+            flex-direction: column; /* Stack children vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        /* REMOVED: .feature-icon CSS (as icons are removed from HTML) */
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+        }
+        .feature-description {
+            color: #cbd5e1; /* slate-300 */
+        }
+
         /* Footer for landing page */
         .landing-footer {
             background-color: #0f172a; /* Dark background */
@@ -118,6 +181,7 @@
             padding: 1.5rem;
             text-align: center;
             box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255,255,255,0.1); /* Subtle top border */
         }
         .logo-header-landing {
             height: 80px; /* Slightly smaller logo for landing page header */
@@ -159,12 +223,11 @@
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
-    <!-- Header for Landing Page -->
     <header class="landing-header text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center">
                 <img src="/static/images/logo.png" alt="ResumeRank Logo" class="logo-header-landing">
-                <h1 class="text-3xl font-bold logo-font">ResumeRank</h1>
+                <h1 class="text-3xl font-bold logo-font" style="font-family: 'Playfair Display', serif;">ResumeRank</h1>
             </div>
             <nav>
                 <a href="/dashboard" class="landing-nav-link text-white">Go to Dashboard</a>
@@ -172,7 +235,6 @@
         </div>
     </header>
 
-    <!-- Hero Section -->
     <main class="hero-section flex-grow">
         <div class="animated-bg-shapes">
             <div class="shape"></div>
@@ -183,13 +245,31 @@
         </div>
         <div class="hero-content">
             <h1 class="hero-title">ResumeRank</h1>
-            <p class="hero-tagline">NLP-Powered Resume Analysis. Unbiased. Efficient. Effective.</p>
+            <p class="hero-tagline">Your AI-Powered Recruitment Assistant. Find the Perfect Candidate, Effortlessly. Match Resumes to Jobs with Precision. Unbiased, Efficient, Intelligent Hiring. Discover Hidden Talent, Instantly.</p>
             <a href="/dashboard" class="get-started-btn">Get Started Now</a>
-            <!-- Removed "Explore Features" button -->
         </div>
     </main>
 
-    <!-- Landing Page Footer -->
+    <section class="features-section text-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-white mb-12" style="font-family: 'Playfair Display', serif;">Why Choose ResumeRank?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="feature-card">
+                    <h3 class="feature-title">AI-Powered Extraction</h3>
+                    <p class="feature-description">Leverage Gemini's advanced NLP to automatically extract skills, experience, and education from any resume or job description.</p>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">Intelligent Matching</h3>
+                    <p class="feature-description">Get unbiased, quantifiable scores based on skills, experience, and education alignment. Find the best fit, faster.</p>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">Streamlined Workflow</h3>
+                    <p class="feature-description">Automate tedious manual review processes. Upload resumes, add jobs, and match candidates all in one intuitive platform.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer class="landing-footer">
         <p>&copy; 2025 ResumeRank. All rights reserved.</p>
     </footer>

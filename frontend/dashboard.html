@@ -34,19 +34,17 @@
                 <form id="uploadResumeForm" class="space-y-4">
                     <input type="file" id="resumeFile" name="file" accept=".pdf,.docx,.txt" required class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4">
                     <button type="submit" class="btn-primary w-full">Upload & Process</button>
-                    <div id="uploadStatus" class="mt-4 text-sm font-medium"></div>
+                    <div id="uploadStatus" class="mt-4 text-sm font-medium hidden"></div>
                 </form>
             </section>
             <section id="add-job-section" class="card bg-white p-6 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4">Add New Job Description</h2>
                 <form id="addJobDescriptionForm" class="space-y-4">
-                    <input type="text" id="jobTitle" name="title" required class="input-field" placeholder="Job Title">
-                    <input type="text" id="companyName" name="company" required class="input-field" placeholder="Company Name">
-                    <textarea id="jobDescriptionText" name="description" rows="6" required class="input-field resize-y" placeholder="Paste full job description here..."></textarea>
-                    <input type="number" id="requiredExperienceYears" name="required_experience_years" class="input-field" placeholder="Required Experience (Years, optional)" min="0">
-                    <input type="text" id="requiredCertifications" name="required_certifications" class="input-field" placeholder="Required Certifications (comma-separated, optional)">
-                    <button type="submit" class="btn-primary w-full">Add Job & Extract Skills</button>
-                    <div id="jobStatus" class="mt-4 text-sm font-medium"></div>
+                    <input type="text" id="jobTitle" name="title" required class="input-field" placeholder="Job Title (e.g., Software Engineer)">
+                    <input type="text" id="companyName" name="company" required class="input-field" placeholder="Company Name (e.g., Tech Solutions Inc.)">
+                    <textarea id="jobDescriptionText" name="description" rows="10" required class="input-field resize-y" placeholder="Paste full job description here, including skills, experience, and education requirements. Gemini will extract the key details for you..."></textarea>
+                    <button type="submit" class="btn-primary w-full">Add Job & Extract Requirements</button>
+                    <div id="jobStatus" class="mt-4 text-sm font-medium hidden"></div>
                 </form>
             </section>
         </div>
@@ -55,9 +53,15 @@
             <div class="space-y-4">
                 <select id="jobSelect" class="input-field"><option value="">-- Select a Job --</option></select>
                 <button id="matchResumesBtn" class="btn-primary w-full">Match Resumes</button>
-                <div id="matchStatus" class="mt-4 text-sm font-medium"></div>
+                <div id="matchStatus" class="mt-4 text-sm font-medium hidden"></div>
             </div>
-            <div id="matchingResults" class="mt-6 space-y-4"></div>
+            <div id="matchingResults" class="mt-6 space-y-4">
+                <div id="matchEmptyState" class="empty-state">
+                    <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <p class="empty-state-title">No Matches Yet</p>
+                    <p class="empty-state-description">Select a job and click 'Match Resumes' to see results.</p>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -76,6 +80,8 @@
                 <p class="font-semibold text-gray-700 mb-1">Required Certifications:</p>
                 <div id="modalJobRequiredCertifications" class="flex flex-wrap gap-2"></div>
             </div>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Required Education: <span id="modalJobRequiredEducation" class="font-normal text-gray-600"></span></p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Required Major: <span id="modalJobRequiredMajor" class="font-normal text-gray-600"></span></p>
             <div>
                 <p class="font-semibold text-gray-700 mb-1">Description:</p>
                 <pre id="modalJobDescriptionText" class="bg-gray-100 p-3 rounded-md text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto border border-gray-200"></pre>

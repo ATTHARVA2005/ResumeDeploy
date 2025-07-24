@@ -31,6 +31,11 @@
         <section id="job-descriptions-list-section" class="card bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">All Added Job Descriptions</h2>
             <div id="jobDescriptionsList" class="space-y-4">
+                <div id="jobsEmptyState" class="empty-state hidden">
+                    <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m7 0V5a2 2 0 012-2h4a2 2 0 012 2v2M7 11v9a2 2 0 002 2h6a2 2 0 002-2v-9"></path></svg>
+                    <p class="empty-state-title">No Job Descriptions Added</p>
+                    <p class="empty-state-description">Add a new job description from the <a href="/dashboard" class="text-indigo-600 hover:text-indigo-500 font-medium">Dashboard</a> to start matching!</p>
+                </div>
                 <p class="text-gray-500">Loading job descriptions...</p>
             </div>
         </section>
@@ -51,6 +56,8 @@
                 <p class="font-semibold text-gray-700 mb-1">Required Certifications:</p>
                 <div id="modalJobRequiredCertifications" class="flex flex-wrap gap-2"></div>
             </div>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Required Education: <span id="modalJobRequiredEducation" class="font-normal text-gray-600"></span></p>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Required Major: <span id="modalJobRequiredMajor" class="font-normal text-gray-600"></span></p>
             <div>
                 <p class="font-semibold text-gray-700 mb-1">Description:</p>
                 <pre id="modalJobDescriptionText" class="bg-gray-100 p-3 rounded-md text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto border border-gray-200"></pre>
@@ -74,22 +81,10 @@
                 </div>
                 <div>
                     <label for="editJobDescriptionText" class="block text-sm font-medium text-gray-700 mb-1">Job Description</label>
-                    <textarea id="editJobDescriptionText" name="description" rows="8" required class="input-field resize-y"></textarea>
-                </div>
-                <div>
-                    <label for="editRequiredSkills" class="block text-sm font-medium text-gray-700 mb-1">Required Skills (comma-separated)</label>
-                    <input type="text" id="editRequiredSkills" name="required_skills" class="input-field">
-                </div>
-                <div>
-                    <label for="editRequiredExperienceYears" class="block text-sm font-medium text-gray-700 mb-1">Required Experience (Years)</label>
-                    <input type="number" id="editRequiredExperienceYears" name="required_experience_years" class="input-field" min="0">
-                </div>
-                <div>
-                    <label for="editRequiredCertifications" class="block text-sm font-medium text-gray-700 mb-1">Required Certifications (comma-separated)</label>
-                    <input type="text" id="editRequiredCertifications" name="required_certifications" class="input-field">
+                    <textarea id="editJobDescriptionText" name="description" rows="10" required class="input-field resize-y" placeholder="Paste full job description here, including skills, experience, and education requirements. Gemini will re-extract key details on save."></textarea>
                 </div>
                 <button type="submit" class="btn-primary w-full">Save Changes</button>
-                <div id="editJobStatus" class="mt-4 text-sm font-medium text-center"></div>
+                <div id="editJobStatus" class="mt-4 text-sm font-medium hidden"></div>
             </form>
         </div>
     </div>
