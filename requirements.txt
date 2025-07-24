@@ -13,3 +13,4 @@ python-Levenshtein
 aiofiles
 python-dotenv
 gunicorn
+psycopg2
