@@ -104,7 +104,7 @@ Follow these steps to get ResumeRank running on your local machine:
 
 1.  **Clone the Repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone <https://github.com/ATTHARVA2005/ResumeDeploy.git>
     cd ResumeRank # Or your project's root directory name
     ```
 
