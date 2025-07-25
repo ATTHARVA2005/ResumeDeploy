@@ -1,6 +1,6 @@
 # ResumeRank: Your AI-Powered Recruitment Assistant
 
-**Creator:** Attharva Gupta
+**Creator:** Attharva Gupta<br>
 **URL:** https://resumerank-8pfn.onrender.com/
 
 ---
