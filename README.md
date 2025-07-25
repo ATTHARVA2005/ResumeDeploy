@@ -105,7 +105,7 @@ Follow these steps to get ResumeRank running on your local machine:
 1.  **Clone the Repository:**
     ```bash
     git clone <https://github.com/ATTHARVA2005/ResumeDeploy.git>
-    cd ResumeRank # Or your project's root directory name
+    cd ResumeDeploy
     ```
 
 2.  **Create a Python Virtual Environment:**
