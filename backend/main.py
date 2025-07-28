@@ -10,6 +10,8 @@ import os
 import json
 from typing import List, Optional, Annotated, Dict, Any
 from datetime import timedelta
+from dotenv import load_dotenv # NEW
+load_dotenv()
 
 # Import all necessary modules
 from . import models, database, auth
