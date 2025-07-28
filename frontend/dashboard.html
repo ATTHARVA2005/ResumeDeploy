@@ -39,12 +39,24 @@
             </section>
             <section id="add-job-section" class="card bg-white p-6 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4">Add New Job Description</h2>
-                <form id="addJobDescriptionForm" class="space-y-4">
+                <div class="mb-4">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" id="toggleJobInputMode" class="sr-only peer">
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span class="ms-3 text-sm font-medium text-gray-900">Add by URL</span>
+                    </label>
+                </div>
+                <form id="addJobDescriptionForm" class="space-y-4" style="display: block;">
                     <input type="text" id="jobTitle" name="title" required class="input-field" placeholder="Job Title (e.g., Software Engineer)">
                     <input type="text" id="companyName" name="company" required class="input-field" placeholder="Company Name (e.g., Tech Solutions Inc.)">
                     <textarea id="jobDescriptionText" name="description" rows="10" required class="input-field resize-y" placeholder="Paste full job description here, including skills, experience, and education requirements. Gemini will extract the key details for you..."></textarea>
                     <button type="submit" class="btn-primary w-full">Add Job & Extract Requirements</button>
                     <div id="jobStatus" class="mt-4 text-sm font-medium hidden"></div>
+                </form>
+                <form id="addJobDescriptionUrlForm" class="space-y-4" style="display: none;">
+                    <input type="url" id="jobUrl" name="url" required class="input-field" placeholder="Paste Job Description URL (e.g., indeed.com/job/...)">
+                    <button type="submit" class="btn-primary w-full">Fetch from URL & Add Job</button>
+                    <div id="jobUrlStatus" class="mt-4 text-sm font-medium hidden"></div>
                 </form>
             </section>
         </div>
@@ -52,6 +64,46 @@
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Match Resumes</h2>
             <div class="space-y-4">
                 <select id="jobSelect" class="input-field"><option value="">-- Select a Job --</option></select>
+                
+                <div class="mt-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Customize Match Weights</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="weightSkills" class="block text-sm font-medium text-gray-700 mb-1">Skills: <span id="weightSkillsValue">60%</span></label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="weightSkills" min="0" max="100" value="60" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                                <input type="number" id="weightSkillsText" min="0" max="100" value="60" class="w-20 input-field text-center">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="weightExperience" class="block text-sm font-medium text-gray-700 mb-1">Experience: <span id="weightExperienceValue">20%</span></label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="weightExperience" min="0" max="100" value="20" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                                <input type="number" id="weightExperienceText" min="0" max="100" value="20" class="w-20 input-field text-center">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="weightCertifications" class="block text-sm font-medium text-gray-700 mb-1">Certifications: <span id="weightCertificationsValue">10%</span></label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="weightCertifications" min="0" max="100" value="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                                <input type="number" id="weightCertificationsText" min="0" max="100" value="10" class="w-20 input-field text-center">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="weightEducation" class="block text-sm font-medium text-gray-700 mb-1">Education: <span id="weightEducationValue">10%</span></label>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="weightEducation" min="0" max="100" value="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                                <input type="number" id="weightEducationText" min="0" max="100" value="10" class="w-20 input-field text-center">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div id="weightWarning" class="text-red-600 text-sm font-medium" style="display: none;">Total weights must sum to 100%. Adjust sliders.</div>
+                    </div>
+                </div>
+
                 <button id="matchResumesBtn" class="btn-primary w-full">Match Resumes</button>
                 <div id="matchStatus" class="mt-4 text-sm font-medium hidden"></div>
             </div>

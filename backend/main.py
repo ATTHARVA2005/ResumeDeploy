@@ -1,6 +1,6 @@
 # backend/main.py
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Depends, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,13 +13,22 @@ from datetime import timedelta
 
 # Import all necessary modules
 from . import models, database, auth
-from .resume_parser import ResumeParser # Updated usage for ResumeParser
-# REMOVED: from .skill_extractor import SkillExtractor (as it's being removed)
+from .resume_parser import ResumeParser
 from .matcher import SkillMatcher
-from .utils import save_upload_file, delete_file, FileValidator
+from .utils import save_upload_file, delete_file, FileValidator, fetch_text_from_url
 
 app = FastAPI(title="ResumeRank", version="1.0.0")
 
+# ... (existing imports) ...
+
+@app.get("/admin-panel", response_class=HTMLResponse)
+async def serve_admin_panel():
+    return FileResponse("frontend/admin_panel.html")
+
+# NEW: Route for the List of Users page
+@app.get("/admin-panel/users", response_class=HTMLResponse)
+async def serve_admin_users_page():
+    return FileResponse("frontend/admin_users.html")
 # --- Middleware ---
 app.add_middleware(
     CORSMiddleware,
@@ -34,11 +43,31 @@ db_operations = database.Database()
 @app.on_event("startup")
 def startup_event():
     db_operations.init_database()
+    print("SQLAlchemy database tables created/checked successfully.")
     print("Database startup complete.")
 
-# --- Instantiated Classes ---
-resume_parser = ResumeParser() # Instance of our updated ResumeParser
-# REMOVED: skill_extractor = SkillExtractor() (as it's being removed)
+    # Get admin credentials from environment variables (NEW)
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+    if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+        print("WARNING: ADMIN_EMAIL or ADMIN_PASSWORD environment variables are not set. Admin user will not be created.")
+        print("Please set ADMIN_EMAIL and ADMIN_PASSWORD in your .env file or Render environment settings for production.")
+    else:
+        # Create an initial admin user if none exists
+        db = database.SessionLocal()
+        try:
+            if not db_operations.get_user_by_email(db, email=ADMIN_EMAIL):
+                print(f"Creating initial admin user: {ADMIN_EMAIL}")
+                hashed_password = auth.get_password_hash(ADMIN_PASSWORD)
+                db_operations.create_user(db, email=ADMIN_EMAIL, hashed_password=hashed_password, name="Admin User", is_admin=True)
+            else:
+                print(f"Admin user {ADMIN_EMAIL} already exists.")
+        finally:
+            db.close()
+
+
+resume_parser = ResumeParser()
 matcher = SkillMatcher()
 
 UPLOADS_DIR = "uploads"
@@ -54,6 +83,10 @@ async def serve_landing_page():
 @app.get("/login", response_class=HTMLResponse)
 async def serve_login_page():
     return FileResponse("frontend/login.html")
+
+@app.get("/admin-login", response_class=HTMLResponse)
+async def serve_admin_login_page():
+    return FileResponse("frontend/admin_login.html")
 
 @app.get("/signup", response_class=HTMLResponse)
 async def serve_signup_page():
@@ -71,6 +104,10 @@ async def serve_uploaded_resumes():
 async def serve_job_descriptions():
     return FileResponse("frontend/job_descriptions.html")
 
+@app.get("/admin-panel", response_class=HTMLResponse)
+async def serve_admin_panel():
+    return FileResponse("frontend/admin_panel.html")
+
 
 # --- Authentication Endpoints ---
 @app.post("/api/register", response_model=models.User)
@@ -79,12 +116,12 @@ def register_user(user: models.UserCreate, db: Session = Depends(auth.get_db_ses
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_password = auth.get_password_hash(user.password)
-    return db_operations.create_user(db=db, email=user.email, hashed_password=hashed_password)
+    return db_operations.create_user(db=db, email=user.email, hashed_password=hashed_password, name=user.name, is_admin=False)
 
 @app.post("/api/login", response_model=models.Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
-    db: Session = Depends(auth.get_db_session)
+    db: Annotated[Session, Depends(auth.get_db_session) ]
 ):
     user = db_operations.get_user_by_email(db, email=form_data.username)
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
@@ -93,6 +130,32 @@ async def login_for_access_token(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/api/admin/login", response_model=models.Token)
+async def login_for_admin_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[Session, Depends(auth.get_db_session)]
+):
+    user = db_operations.get_user_by_email(db, email=form_data.username)
+    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Access Denied: This login is for administrators only. Please use the User Login.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
@@ -113,17 +176,11 @@ async def upload_resume(
     
     file_path = None
     try:
-        # Save the uploaded file temporarily to extract text
         file_path = await save_upload_file(file, UPLOADS_DIR)
-        
-        # Extract raw text using local parser
         raw_text = resume_parser.extract_text(file_path)
-        
-        # Use Gemini to parse and structure the extracted text
         parsed_data_from_gemini = await resume_parser.parse_text_with_gemini(raw_text)
         
-        # Extract data fields from Gemini's structured output
-        filename_to_save = file.filename # Use original filename for record
+        filename_to_save = file.filename
         extracted_skills = parsed_data_from_gemini.get('extracted_skills', [])
         experience_entries = parsed_data_from_gemini.get('experience', [])
         total_years_experience = parsed_data_from_gemini.get('total_years_experience', 0)
@@ -133,8 +190,8 @@ async def upload_resume(
         resume_id = db_operations.save_resume(
             db=db, user_id=current_user.id,
             filename=filename_to_save,
-            file_path=file_path, # Store the path to the temporary file for now
-            raw_text=raw_text, # Store the raw text that Gemini processed
+            file_path=file_path,
+            raw_text=raw_text,
             extracted_skills=extracted_skills,
             experience=experience_entries,
             total_years_experience=total_years_experience,
@@ -143,13 +200,10 @@ async def upload_resume(
         )
         return {"status": "success", "message": "Resume uploaded and processed successfully.", "resume_id": resume_id}
     except Exception as e:
-        # It's crucial to delete the temporary file even if an error occurs
         if file_path and os.path.exists(file_path): delete_file(file_path)
-        print(f"Error processing resume: {str(e)}") # Log the error for debugging
+        print(f"Error processing resume: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing resume: {str(e)}")
     finally:
-        # Ensure temporary file is deleted after processing (success or failure)
-        # This will delete the file immediately after its content is read and processed by Gemini
         if file_path and os.path.exists(file_path): delete_file(file_path)
 
 @app.get("/api/resumes", response_model=List[models.Resume])
@@ -183,8 +237,7 @@ async def delete_resume(
         raise HTTPException(status_code=404, detail="Resume not found.")
     if resume_db.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this resume.")
-    
-    # Also delete the associated file if it exists and still points to a local file
+       
     if resume_db.file_path and os.path.exists(resume_db.file_path):
         delete_file(resume_db.file_path)
 
@@ -195,25 +248,49 @@ async def delete_resume(
 # --- PROTECTED: Job Description Endpoints ---
 @app.post("/api/job-description", response_model=dict)
 async def add_job_description(
-    job_desc: models.JobDescription, # Simplified Pydantic model now
+    job_desc: models.JobDescription,
     current_user: Annotated[models.User, Depends(auth.get_current_user)],
     db: Annotated[Session, Depends(auth.get_db_session)]
 ):
-    # Use Gemini to parse and structure the job description
     parsed_job_data_from_gemini = await resume_parser.parse_job_description_with_gemini(job_desc.description)
 
     job_id = db_operations.save_job_description(
         db=db, user_id=current_user.id,
-        title=parsed_job_data_from_gemini.get('title', job_desc.title), # Use Gemini's title, fallback to user input
-        company=parsed_job_data_from_gemini.get('company', job_desc.company), # Use Gemini's company, fallback to user input
-        description=job_desc.description, # Keep the original description
+        title=parsed_job_data_from_gemini.get('title', job_desc.title),
+        company=parsed_job_data_from_gemini.get('company', job_desc.company),
+        description=job_desc.description,
         required_skills=parsed_job_data_from_gemini.get('required_skills', []),
         required_experience_years=parsed_job_data_from_gemini.get('required_experience_years', 0),
         required_certifications=parsed_job_data_from_gemini.get('required_certifications', []),
         required_education_level=parsed_job_data_from_gemini.get('required_education_level', None),
-        required_major=parsed_job_data_from_gemini.get('required_major', None)
+        required_major=parsed_job_data_from_gemini.get('major', None)
     )
     return {"status": "success", "message": "Job description added and processed successfully.", "job_id": job_id}
+
+# MODIFIED ENDPOINT: Extract Job Description from URL (returns data, doesn't save)
+@app.post("/api/extract-job-from-url", response_model=models.ExtractedJobDetails) # CHANGED response_model
+async def extract_job_from_url( # CHANGED function name to reflect action
+    job_url_data: models.JobDescriptionURL,
+    current_user: Annotated[models.User, Depends(auth.get_current_user)], # Still requires authentication
+):
+    try:
+        raw_text_from_url = await fetch_text_from_url(job_url_data.url)
+        if not raw_text_from_url.strip():
+            raise HTTPException(status_code=400, detail="Could not extract meaningful text from the provided URL.")
+
+        parsed_job_data_from_gemini = await resume_parser.parse_job_description_with_gemini(raw_text_from_url)
+        
+        # Return extracted data for frontend to pre-fill
+        return models.ExtractedJobDetails(
+            title=parsed_job_data_from_gemini.get('title', f"Job from URL: {job_url_data.url[:50]}..."),
+            company=parsed_job_data_from_gemini.get('company', "Unknown Company"),
+            description=raw_text_from_url # Always return the full raw text
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        print(f"Error processing job description from URL: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to extract job description from URL: {str(e)}")
 
 @app.get("/api/job-descriptions", response_model=List[models.Job])
 async def get_all_job_descriptions_for_current_user(
@@ -221,8 +298,6 @@ async def get_all_job_descriptions_for_current_user(
     db: Annotated[Session, Depends(auth.get_db_session)]
 ):
     return db_operations.get_all_job_descriptions_for_user(db, user_id=current_user.id)
-
-# --- Endpoints for managing a single job ---
 
 @app.get("/api/job-description/{job_id}", response_model=models.Job)
 async def get_job_description_details(
@@ -240,7 +315,7 @@ async def get_job_description_details(
 @app.put("/api/job-description/{job_id}", response_model=models.Job)
 async def update_job_description(
     job_id: int,
-    job_desc: models.JobDescription, # Simplified Pydantic model now
+    job_desc: models.JobDescription,
     current_user: Annotated[models.User, Depends(auth.get_current_user)],
     db: Annotated[Session, Depends(auth.get_db_session)]
 ):
@@ -250,13 +325,11 @@ async def update_job_description(
     if job_db.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this job.")
 
-    # Use Gemini to re-parse and structure the updated job description
     parsed_job_data_from_gemini = await resume_parser.parse_job_description_with_gemini(job_desc.description)
 
-    # Update fields from Gemini's output
-    job_db.title = parsed_job_data_from_gemini.get('title', job_desc.title) # Use Gemini's title, fallback to user input
-    job_db.company = parsed_job_data_from_gemini.get('company', job_desc.company) # Use Gemini's company, fallback to user input
-    job_db.description = job_desc.description # Keep the original description
+    job_db.title = parsed_job_data_from_gemini.get('title', job_desc.title)
+    job_db.company = parsed_job_data_from_gemini.get('company', job_desc.company)
+    job_db.description = job_desc.description
     job_db.required_experience_years = parsed_job_data_from_gemini.get('required_experience_years', 0)
     job_db.required_certifications = json.dumps(parsed_job_data_from_gemini.get('required_certifications', []))
     job_db.required_education_level = parsed_job_data_from_gemini.get('required_education_level', None)
@@ -288,27 +361,35 @@ async def delete_job_description(
 async def match_resumes_for_user(
     current_user: Annotated[models.User, Depends(auth.get_current_user)],
     db: Annotated[Session, Depends(auth.get_db_session)],
-    job_id: int = Form(...)
+    job_id: int = Form(...),
+    weights: Optional[str] = Form(None)
 ):
-    # 1. Fetch the job and verify ownership
     job_db = db.query(database.Job).filter(database.Job.id == job_id).first()
     if not job_db:
         raise HTTPException(status_code=404, detail="Job description not found.")
     if job_db.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to match against this job.")
 
-    # 2. Fetch all resumes for the current user
+    parsed_weights = None
+    if weights:
+        try:
+            weights_dict = json.loads(weights)
+            parsed_weights = models.MatchWeights(**weights_dict).dict()
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON format for weights.")
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid weights: {e}")
+
     resumes = db_operations.get_all_resumes_for_user(db, user_id=current_user.id)
     if not resumes:
-        return [] # Return an empty list if the user has no resumes
+        return []
 
     all_match_results = []
-    job = models.Job.from_orm(job_db) # Convert to Pydantic model for easy access
+    job = models.Job.from_orm(job_db)
 
     for resume_data in resumes:
-        resume = models.Resume.from_orm(resume_data) # Convert to Pydantic model
+        resume = models.Resume.from_orm(resume_data)
         
-        # 3. Calculate the match score
         score_data = matcher.calculate_match(
             resume_skills=resume.extracted_skills,
             job_skills=job.required_skills,
@@ -318,7 +399,8 @@ async def match_resumes_for_user(
             resume_highest_education_level=resume.highest_education_level,
             resume_major=resume.major,
             job_required_education_level=job.required_education_level,
-            job_required_major=job.required_major
+            job_required_major=job.required_major,
+            weights=parsed_weights
         )
         
         all_match_results.append(models.MatchResultResponse(
@@ -334,3 +416,35 @@ async def match_resumes_for_user(
     
     all_match_results.sort(key=lambda x: x.overall_score, reverse=True)
     return all_match_results
+
+# --- ADMIN PANEL ENDPOINTS ---
+@app.get("/api/admin/users", response_model=List[models.User])
+async def get_all_users(
+    current_admin: Annotated[models.User, Depends(auth.get_current_admin_user)],
+    db: Annotated[Session, Depends(auth.get_db_session)]
+):
+    """
+    Admin-only endpoint to retrieve all users.
+    """
+    return db_operations.get_all_users(db)
+
+@app.delete("/api/admin/users/{user_id}", response_model=dict)
+async def delete_user_account(
+    user_id: int,
+    current_admin: Annotated[models.User, Depends(auth.get_current_admin_user)],
+    db: Annotated[Session, Depends(auth.get_db_session)]
+):
+    """
+    Admin-only endpoint to delete a user account and all associated data.
+    """
+    if current_admin.id == user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Admin cannot delete their own account via this panel.")
+
+    user_to_delete = db_operations.get_user_by_id(db, user_id)
+    if not user_to_delete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    if db_operations.delete_user(db, user_id):
+        return {"status": "success", "message": f"User {user_id} and associated data deleted successfully."}
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete user.")

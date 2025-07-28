@@ -1,9 +1,10 @@
 # backend/models.py
 
-from pydantic import BaseModel, Field, validator, ConfigDict
+from pydantic import BaseModel, Field, validator, ConfigDict, model_validator
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 import json
+import math
 
 # --- Helper Function for Validation ---
 def parse_json_string(value):
@@ -26,6 +27,7 @@ class ExperienceEntry(BaseModel):
 # --- User Models ---
 class UserBase(BaseModel):
     email: str
+    name: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -44,12 +46,38 @@ class TokenData(BaseModel):
 
 # --- API Models ---
 class JobDescription(BaseModel):
-    # Simplified: Only 'title', 'company', and 'description' are input by the user.
-    # Other fields are now extracted by Gemini from the 'description'.
     title: str
     company: str
     description: str
 
+class JobDescriptionURL(BaseModel):
+    url: str
+
+# NEW: Model for extracted job details from URL
+class ExtractedJobDetails(BaseModel):
+    title: str
+    company: str
+    description: str
+    # You might also include these if you want to show them pre-parsed in the form
+    # required_skills: List[str] = []
+    # required_experience_years: Optional[int] = 0
+    # required_certifications: List[str] = []
+    # required_education_level: Optional[str] = None
+    # required_major: Optional[str] = None
+
+
+class MatchWeights(BaseModel):
+    skills: float = Field(default=0.6, ge=0.0, le=1.0)
+    experience: float = Field(default=0.2, ge=0.0, le=1.0)
+    certifications: float = Field(default=0.1, ge=0.0, le=1.0)
+    education: float = Field(default=0.1, ge=0.0, le=1.0)
+
+    @model_validator(mode='after')
+    def sum_weights_must_be_one(self):
+        total_weights = self.skills + self.experience + self.certifications + self.education
+        if not math.isclose(total_weights, 1.0, rel_tol=1e-5):
+            raise ValueError(f"Sum of all weights must be approximately 1.0 (currently {total_weights})")
+        return self
 
 class Resume(BaseModel):
     id: int
@@ -68,8 +96,6 @@ class Resume(BaseModel):
     model_config = ConfigDict(from_attributes=True)
         
 class Job(BaseModel):
-    # This model represents the Job data as stored in the database,
-    # including all the fields extracted by Gemini from the job description.
     id: int
     title: str
     company: str

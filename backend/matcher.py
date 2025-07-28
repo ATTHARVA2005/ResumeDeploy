@@ -28,10 +28,12 @@ class SkillMatcher:
                         resume_experience_years: Optional[int] = None,
                         job_required_experience_years: Optional[int] = None,
                         job_required_certifications: Optional[List[str]] = None,
-                        resume_highest_education_level: Optional[str] = None, # NEW
-                        resume_major: Optional[str] = None, # NEW
-                        job_required_education_level: Optional[str] = None, # NEW
-                        job_required_major: Optional[str] = None # NEW
+                        resume_highest_education_level: Optional[str] = None,
+                        resume_major: Optional[str] = None,
+                        job_required_education_level: Optional[str] = None,
+                        job_required_major: Optional[str] = None,
+                        # NEW: Add weights parameter
+                        weights: Optional[Dict[str, float]] = None
                        ) -> Dict[str, Any]:
         """
         Calculate a comprehensive match between resume and job requirements.
@@ -93,7 +95,7 @@ class SkillMatcher:
             job_required_certifications
         )
 
-        # --- 4. Education Matching (NEW) ---
+        # --- 4. Education Matching ---
         education_score = self._calculate_education_score(
             resume_highest_education_level=resume_highest_education_level,
             resume_major=resume_major,
@@ -102,21 +104,30 @@ class SkillMatcher:
         )
 
         # --- 5. Combine Overall Score ---
-        # Assign weights to different match aspects
-        WEIGHT_SKILLS = 0.60 # Decreased to make space for education
-        WEIGHT_EXPERIENCE = 0.20
-        WEIGHT_CERTIFICATIONS = 0.10
-        WEIGHT_EDUCATION = 0.10 # NEW Weight for education
+        # Use custom weights if provided, otherwise fall back to defaults
+        # Ensure weights sum to 1.0 (handled by Pydantic validation if using models.MatchWeights)
+        effective_weights = {
+            "skills": 0.60,
+            "experience": 0.20,
+            "certifications": 0.10,
+            "education": 0.10
+        }
+        if weights:
+            # Normalise custom weights if they don't sum to 1, though Pydantic model should enforce this.
+            # This is a fallback for direct calls or if validation is skipped.
+            total_custom_weight = sum(weights.values())
+            if not math.isclose(total_custom_weight, 0.0) and not math.isclose(total_custom_weight, 1.0):
+                effective_weights = {k: v / total_custom_weight for k, v in weights.items()}
+            elif math.isclose(total_custom_weight, 1.0):
+                effective_weights = weights
 
-        # Normalize weights to sum to 1
-        total_weight = WEIGHT_SKILLS + WEIGHT_EXPERIENCE + WEIGHT_CERTIFICATIONS + WEIGHT_EDUCATION
-        
+
         overall_score = (
-            (skill_overall_score * WEIGHT_SKILLS) +
-            (experience_score * WEIGHT_EXPERIENCE) +
-            (certifications_score * WEIGHT_CERTIFICATIONS) +
-            (education_score * WEIGHT_EDUCATION) # NEW: Add education score
-        ) / total_weight
+            (skill_overall_score * effective_weights["skills"]) +
+            (experience_score * effective_weights["experience"]) +
+            (certifications_score * effective_weights["certifications"]) +
+            (education_score * effective_weights["education"])
+        )
 
         overall_score = max(0.0, min(100.0, overall_score))
 
@@ -129,14 +140,15 @@ class SkillMatcher:
                 **skill_match_details,
                 'experience_score': round(experience_score, 2),
                 'certifications_score': round(certifications_score, 2),
-                'education_score': round(education_score, 2), # NEW
+                'education_score': round(education_score, 2),
                 'resume_exp_years': resume_experience_years,
                 'job_req_exp_years': job_required_experience_years,
                 'job_req_certs': job_required_certifications,
-                'resume_highest_edu': resume_highest_education_level, # NEW
-                'resume_major': resume_major, # NEW
-                'job_req_edu': job_required_education_level, # NEW
-                'job_req_major': job_required_major # NEW
+                'resume_highest_edu': resume_highest_education_level,
+                'resume_major': resume_major,
+                'job_req_edu': job_required_education_level,
+                'job_req_major': job_required_major,
+                'applied_weights': effective_weights # NEW: Show which weights were applied
             }
         }
     
@@ -255,6 +267,7 @@ class SkillMatcher:
                                    job_required_major: Optional[str]) -> float:
         """
         Calculates a score based on matching education level and major.
+        If job requires no specific education, it's a 100% match.
         """
         score = 0.0
         
@@ -268,26 +281,40 @@ class SkillMatcher:
         resume_level_val = self.education_hierarchy.get(resume_edu_level_norm, 0)
         job_req_level_val = self.education_hierarchy.get(job_req_edu_level_norm, 0)
 
-        if job_req_level_val == 0: # No specific education level required by job
-            score += 50.0 # Base score for having any education
-            if resume_level_val > 0:
-                score += 50.0 # Bonus for actually having education if not strictly required
+        # Explicitly handle cases where job requires no education
+        if job_req_level_val == 0:
+            edu_level_score = 100.0 # If job requires 0 education, it's a perfect match for level
         elif resume_level_val >= job_req_level_val:
-            score += 100.0 # Resume meets or exceeds required level
+            edu_level_score = 100.0 # Resume meets or exceeds required level
         elif resume_level_val > 0 and resume_level_val < job_req_level_val:
             # Partial credit for having some education but not meeting the level
-            score += (resume_level_val / job_req_level_val) * 70.0
-        
-        # Adjust score based on major match (if a major is specified by the job)
-        if job_req_major_norm:
-            major_match_score = 0.0
-            if resume_major_norm and fuzz.partial_ratio(job_req_major_norm, resume_major_norm) > 80:
-                major_match_score = 100.0 # Good fuzzy match on major
-            elif resume_major_norm and job_req_major_norm in resume_major_norm: # Exact substring match
-                major_match_score = 100.0
+            edu_level_score = (resume_level_val / job_req_level_val) * 80.0 # Give partial credit, max 80% for not fully meeting.
+        else: # resume_level_val == 0 and job_req_level_val > 0
+            edu_level_score = 0.0 # Job requires education, but resume has none listed
+
+        # Score based on major match (if a major is specified by the job)
+        major_match_score = 0.0
+        if job_req_major_norm and job_req_major_norm.lower() != 'none': # Only consider major if job actually specified one
+            if resume_major_norm and resume_major_norm.lower() != 'none':
+                # Use partial ratio for flexibility
+                if fuzz.partial_ratio(job_req_major_norm, resume_major_norm) > 80:
+                    major_match_score = 100.0
+                elif job_req_major_norm in resume_major_norm: # Also check for exact substring match
+                    major_match_score = 100.0
+            # If resume has no major but job requires one, major_match_score remains 0.0
             
-            # Combine major match with education level score. For example, 70% level, 30% major.
-            # This is a simple proportional merge. You can adjust weights.
-            score = (score * 0.7) + (major_match_score * 0.3)
+            # Combine major match with education level score.
+            # Give higher weight to education level than major unless major is a perfect match.
+            # Adjust these weights as needed. For simplicity, let's keep it direct.
+            # If a major is required, it becomes a factor.
+            # If major is required but resume has none, it will pull score down.
+            # If resume has major but job doesn't require, it doesn't add to score, unless it matches default "None" to "None"
+            
+            # For combining: A simple average or weighted average works.
+            # Let's say edu level is 70% of score, major is 30% if major is required.
+            score = (edu_level_score * 0.7) + (major_match_score * 0.3)
+        else:
+            # If no major is required by job, the score is solely based on education level
+            score = edu_level_score
         
         return max(0.0, min(100.0, score))

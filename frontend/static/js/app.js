@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = window.location.origin;
 
     // --- Utility Functions ---
-    // Enhanced showMessage to include spinner and new classes
     const showMessage = (element, message, type = 'info', showSpinner = false) => {
         if (!element) return;
         element.innerHTML = showSpinner ? `<span class="spinner"></span> ${message}` : message;
@@ -13,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type === 'error' ? 'status-message-error' :
             'status-message-info'
         }`;
-        element.style.display = 'flex'; // Use flex to align spinner and text
+        element.style.display = 'flex';
     };
 
     const clearMessage = (element) => {
@@ -30,11 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
             button.innerHTML = `<span class="spinner"></span> Processing...`;
         } else {
             button.disabled = false;
-            // Restore original text, or a generic "Submit"
             if (button.dataset.originalText) {
                 button.innerHTML = button.dataset.originalText;
             } else {
-                button.innerHTML = 'Submit'; // Fallback
+                button.innerHTML = 'Submit';
             }
         }
     };
@@ -53,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const redirectToLogin = () => {
         window.location.href = '/login';
+    };
+
+    const redirectToAdminLogin = () => {
+        window.location.href = '/admin-login';
     };
 
     const renderSkillTags = (skills, typeClass) => {
@@ -75,6 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('<hr class="my-2 border-gray-200">');
     };
 
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
     // --- Modals Logic ---
     const setupModal = (modalId, closeButtonSelector) => {
         const modal = document.getElementById(modalId);
@@ -88,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.classList.remove('modal-active');
             };
         }
-        // Event listener to close modal when clicking outside
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
                 modal.classList.remove('modal-active');
@@ -97,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return modal;
     };
 
-    // Initialize modals only if their elements exist on the current page
     const jobDetailsModal = setupModal('jobDetailsModal', '.close-button');
     const resumeDetailsModal = setupModal('resumeDetailsModal', '.close-button');
     const jobEditModal = setupModal('jobEditModal', '.close-button[data-modal-id="jobEditModal"]');
@@ -140,7 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = getToken();
         if (!token) {
             console.error('No authentication token found. Redirecting to login.');
-            redirectToLogin();
+            if (url.includes('/admin/')) {
+                redirectToAdminLogin();
+            } else {
+                redirectToLogin();
+            }
             throw new Error('No authentication token found.');
         }
 
@@ -158,7 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.status === 401 || response.status === 403) {
             console.error('Authentication failed or token expired. Clearing token and redirecting.');
             removeToken();
-            redirectToLogin();
+            if (url.includes('/admin/')) {
+                alert('Admin session expired or unauthorized. Please log in as admin again.');
+                redirectToAdminLogin();
+            } else {
+                redirectToLogin();
+            }
             throw new Error('Authentication failed or token expired.');
         }
         if (!response.ok) {
@@ -193,11 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     const data = await response.json();
                     setToken(data.access_token);
-                    showMessage(loginStatus, 'Login successful! Redirecting...', 'success', true);
+                    showMessage(loginStatus, 'Login successful! Redirecting to dashboard...', 'success', true);
                     setTimeout(redirectToDashboard, 1000);
                 } else {
                     const errorData = await response.json();
-                    showMessage(loginStatus, errorData.detail || 'Login failed', 'error');
+                    showMessage(loginStatus, errorData.detail || 'Login failed. Please check your credentials.', 'error');
                 }
             } catch (error) {
                 showMessage(loginStatus, `Network error: ${error.message}`, 'error');
@@ -207,11 +224,56 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Admin Login Logic
+    const adminLoginForm = document.getElementById('adminLoginForm');
+    const adminLoginStatus = document.getElementById('adminLoginStatus');
+    if (adminLoginForm) {
+        adminLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            clearMessage(adminLoginStatus);
+            toggleButtonState(adminLoginForm.querySelector('button[type="submit"]'), true);
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('username', email);
+                formData.append('password', password);
+
+                const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setToken(data.access_token);
+                    showMessage(adminLoginStatus, 'Admin login successful! Redirecting to admin panel...', 'success', true);
+                    setTimeout(() => { window.location.href = '/admin-panel'; }, 1000);
+                } else {
+                    const errorData = await response.json();
+                    if (response.status === 403) {
+                        showMessage(adminLoginStatus, `${errorData.detail} <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">User Login</a>`, 'error');
+                    } else {
+                        showMessage(adminLoginStatus, errorData.detail || 'Admin login failed. Please check your credentials.', 'error');
+                    }
+                }
+            } catch (error) {
+                showMessage(adminLoginStatus, `Network error: ${error.message}`, 'error');
+            } finally {
+                toggleButtonState(adminLoginForm.querySelector('button[type="submit"]'), false);
+            }
+        });
+    }
+
+
     const signupForm = document.getElementById('signupForm');
     const signupStatus = document.getElementById('signupStatus');
     if (signupForm) {
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const name = e.target.name.value;
             const email = e.target.email.value;
             const password = e.target.password.value;
             clearMessage(signupStatus);
@@ -221,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password, name })
                 });
 
                 if (response.ok) {
@@ -244,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             removeToken();
-            redirectToLogin();
+            window.location.href = '/'; 
         });
     }
 
@@ -253,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadStatus = document.getElementById('uploadStatus');
     const uploadButton = uploadResumeForm ? uploadResumeForm.querySelector('button[type="submit"]') : null;
     if (uploadResumeForm) {
-        // Store original button text
         if (uploadButton) uploadButton.dataset.originalText = uploadButton.innerHTML;
 
         uploadResumeForm.addEventListener('submit', async (e) => {
@@ -266,11 +327,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const file = fileInput.files[0];
+
+            let validationMessage = '';
+            const allowedExtensions = ['.pdf', '.docx', '.txt'];
+            const maxFileSize = 10 * 1024 * 1024; // 10MB
+
+            const fileExt = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+            if (!allowedExtensions.includes(`.${fileExt}`)) {
+                validationMessage = `File type '.${fileExt}' not allowed. Allowed types: ${allowedExtensions.join(', ')}.`;
+            } else if (file.size > maxFileSize) {
+                validationMessage = `File too large. Maximum size: ${formatFileSize(maxFileSize)}. Provided: ${formatFileSize(file.size)}.`;
+            }
+
+            if (validationMessage) {
+                showMessage(uploadStatus, validationMessage, 'error');
+                return;
+            }
+
             toggleButtonState(uploadButton, true);
             showMessage(uploadStatus, 'Uploading and processing resume...', 'info', true);
 
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            formData.append('file', file);
 
             try {
                 const response = await authFetch(`${API_BASE_URL}/api/upload-resume`, {
@@ -295,16 +374,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Add Job Description Logic (Dashboard Page) ---
     const addJobDescriptionForm = document.getElementById('addJobDescriptionForm');
+    const jobTitleInput = document.getElementById('jobTitle');
+    const companyNameInput = document.getElementById('companyName');
+    const jobDescriptionTextInput = document.getElementById('jobDescriptionText');
     const jobStatus = document.getElementById('jobStatus');
     const addJobButton = addJobDescriptionForm ? addJobDescriptionForm.querySelector('button[type="submit"]') : null;
+    
+    const addJobDescriptionUrlForm = document.getElementById('addJobDescriptionUrlForm');
+    const jobUrlInput = document.getElementById('jobUrl'); // NEW: Reference to URL input
+    const jobUrlStatus = document.getElementById('jobUrlStatus');
+    const jobUrlButton = addJobDescriptionUrlForm ? addJobDescriptionUrlForm.querySelector('button[type="submit"]') : null;
+    const toggleJobInputMode = document.getElementById('toggleJobInputMode');
+
+    if (toggleJobInputMode && addJobDescriptionForm && addJobDescriptionUrlForm) {
+        toggleJobInputMode.addEventListener('change', () => {
+            if (toggleJobInputMode.checked) {
+                addJobDescriptionForm.style.display = 'none';
+                addJobDescriptionUrlForm.style.display = 'block';
+                clearMessage(jobStatus);
+                jobUrlInput.focus(); // Focus on the URL input when switching
+            } else {
+                addJobDescriptionForm.style.display = 'block';
+                addJobDescriptionUrlForm.style.display = 'none';
+                clearMessage(jobUrlStatus);
+                jobTitleInput.focus(); // Focus on title when switching back
+            }
+        });
+    }
+
     if (addJobDescriptionForm) {
         if (addJobButton) addJobButton.dataset.originalText = addJobButton.innerHTML;
 
         addJobDescriptionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const jobTitle = e.target.jobTitle.value;
-            const companyName = e.target.companyName.value;
-            const jobDescriptionText = e.target.jobDescriptionText.value;
+            const jobTitle = jobTitleInput.value;
+            const companyName = companyNameInput.value;
+            const jobDescriptionText = jobDescriptionTextInput.value;
             clearMessage(jobStatus);
 
             toggleButtonState(addJobButton, true);
@@ -337,13 +442,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // MODIFIED: Handle URL submission to extract, then pre-fill
+    if (addJobDescriptionUrlForm) {
+        if (jobUrlButton) jobUrlButton.dataset.originalText = jobUrlButton.innerHTML;
+
+        addJobDescriptionUrlForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const jobUrl = jobUrlInput.value;
+            clearMessage(jobUrlStatus);
+
+            toggleButtonState(jobUrlButton, true);
+            showMessage(jobUrlStatus, 'Fetching job description from URL and processing...', 'info', true);
+
+            try {
+                const extractedData = await authFetch(`${API_BASE_URL}/api/extract-job-from-url`, { // CHANGED ENDPOINT
+                    method: 'POST',
+                    body: JSON.stringify({ url: jobUrl })
+                });
+
+                // Pre-fill the regular job description form
+                jobTitleInput.value = extractedData.title;
+                companyNameInput.value = extractedData.company;
+                jobDescriptionTextInput.value = extractedData.description;
+
+                // Switch back to the manual form and show success
+                toggleJobInputMode.checked = false; // Uncheck "Add by URL" toggle
+                addJobDescriptionForm.style.display = 'block';
+                addJobDescriptionUrlForm.style.display = 'none';
+                clearMessage(jobUrlStatus); // Clear URL status
+                showMessage(jobStatus, 'Job details extracted and pre-filled. Please review and click "Add Job" to save.', 'success');
+                jobTitleInput.focus(); // Focus on first field of the pre-filled form
+                
+                e.target.reset(); // Clear the URL input
+
+            } catch (error) {
+                showMessage(jobUrlStatus, `Error fetching job from URL: ${error.message}`, 'error');
+            } finally {
+                toggleButtonState(jobUrlButton, false);
+            }
+        });
+    }
+
+
     // --- Load Resumes List (Uploaded Resumes Page) ---
     const resumesListDiv = document.getElementById('resumesList');
     const resumesEmptyState = document.getElementById('resumesEmptyState');
     const loadResumes = async () => {
         if (!resumesListDiv) return;
 
-        if (resumesEmptyState) resumesEmptyState.classList.add('hidden'); // Hide empty state initially
+        if (resumesEmptyState) resumesEmptyState.classList.add('hidden');
         resumesListDiv.innerHTML = '<p class="text-gray-500"><span class="spinner"></span> Loading resumes...</p>';
 
         try {
@@ -351,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resumesListDiv.innerHTML = '';
 
             if (resumes.length === 0) {
-                if (resumesEmptyState) resumesEmptyState.classList.remove('hidden'); // Show empty state
+                if (resumesEmptyState) resumesEmptyState.classList.remove('hidden');
                 return;
             }
 
@@ -412,14 +559,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadJobDescriptions = async () => {
         if (!jobDescriptionsListDiv) return;
 
-        if (jobsEmptyState) jobsEmptyState.classList.add('hidden'); // Hide empty state initially
+        if (jobsEmptyState) jobsEmptyState.classList.add('hidden');
         jobDescriptionsListDiv.innerHTML = '<p class="text-gray-500"><span class="spinner"></span> Loading job descriptions...</p>';
         try {
             const jobs = await authFetch(`${API_BASE_URL}/api/job-descriptions`);
             jobDescriptionsListDiv.innerHTML = '';
 
             if (jobs.length === 0) {
-                if (jobsEmptyState) jobsEmptyState.classList.remove('hidden'); // Show empty state
+                if (jobsEmptyState) jobsEmptyState.classList.remove('hidden');
                 return;
             }
 
@@ -432,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="list-item-details">Company: ${job.company}</p>
                         <p class="list-item-details">Added: ${new Date(job.created_date).toLocaleDateString()}</p>
                         <p class="list-item-details">Req. Exp: ${job.required_experience_years !== null && job.required_experience_years !== 0 ? `${job.required_experience_years} years` : 'N/A'}</p>
-                        <p class="list-item-details">Req. Edu: ${job.required_education_level && job.required_education_level.toLowerCase() !== 'none' ? job.required_education_level : 'N/A'} ${job.required_major && job.required_major.toLowerCase() !== 'none' ? `(${job.required_major})` : ''}</p>
+                        <p class="list-item-details">Req. Edu: ${job.required_education_level && job.required_education_level.toLowerCase() !== 'none' ? job.required_education_level : 'N/A'} ${job.required_major && job.required_major.toLowerCase() !== 'none' ? `(${job.major})` : ''}</p>
                     </div>
                     <div class="flex space-x-2 mt-4 sm:mt-0">
                         <button class="btn-secondary view-job-btn" data-id="${job.id}">View Details</button>
@@ -461,7 +608,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const jobId = e.target.dataset.id;
                     try {
                         const job = await authFetch(`${API_BASE_URL}/api/job-description/${jobId}`);
-                        // Check if elements exist before populating
                         const editJobIdElem = document.getElementById('editJobId');
                         const editJobTitleElem = document.getElementById('editJobTitle');
                         const editCompanyNameElem = document.getElementById('editCompanyName');
@@ -546,9 +692,106 @@ document.addEventListener('DOMContentLoaded', () => {
     const matchResumesBtn = document.getElementById('matchResumesBtn');
     const matchingResultsDiv = document.getElementById('matchingResults');
     const matchStatus = document.getElementById('matchStatus');
-    const matchEmptyState = document.getElementById('matchEmptyState'); // Get empty state element
-    const matchButton = matchResumesBtn; // Already a direct reference, but for consistency with toggleButtonState pattern
+    const matchEmptyState = document.getElementById('matchEmptyState');
+    const matchButton = matchResumesBtn;
     
+    // Weight Adjustment Logic
+    const weightElements = {
+        skills: {
+            slider: document.getElementById('weightSkills'),
+            text: document.getElementById('weightSkillsText'),
+            display: document.getElementById('weightSkillsValue')
+        },
+        experience: {
+            slider: document.getElementById('weightExperience'),
+            text: document.getElementById('weightExperienceText'),
+            display: document.getElementById('weightExperienceValue')
+        },
+        certifications: {
+            slider: document.getElementById('weightCertifications'),
+            text: document.getElementById('weightCertificationsText'),
+            display: document.getElementById('weightCertificationsValue')
+        },
+        education: {
+            slider: document.getElementById('weightEducation'),
+            text: document.getElementById('weightEducationText'),
+            display: document.getElementById('weightEducationValue')
+        }
+    };
+    const weightWarning = document.getElementById('weightWarning');
+
+    const updateWeightDisplays = (key, sourceElement) => {
+        let value;
+        if (sourceElement === weightElements[key].slider) {
+            value = parseInt(weightElements[key].slider.value, 10);
+            if (weightElements[key].text) {
+                weightElements[key].text.value = value;
+            }
+        } else if (sourceElement === weightElements[key].text) {
+            value = parseInt(weightElements[key].text.value, 10);
+            if (isNaN(value) || value < 0 || value > 100) {
+                value = Math.max(0, Math.min(100, isNaN(value) ? 0 : value));
+                weightElements[key].text.value = value;
+            }
+            if (weightElements[key].slider) {
+                weightElements[key].slider.value = value;
+            }
+        } else {
+            value = parseInt(weightElements[key].slider.value, 10);
+            if (weightElements[key].text) {
+                weightElements[key].text.value = value;
+            }
+        }
+        if (weightElements[key].display) {
+            weightElements[key].display.textContent = `${value}%`;
+        }
+        checkTotalWeights();
+    };
+
+    const checkTotalWeights = () => {
+        let total = 0;
+        for (const key in weightElements) {
+            if (weightElements[key].text) {
+                total += parseInt(weightElements[key].text.value, 10) || 0;
+            } else if (weightElements[key].slider) {
+                total += parseInt(weightElements[key].slider.value, 10) || 0;
+            }
+        }
+        if (weightWarning) {
+            if (total !== 100) {
+                weightWarning.style.display = 'block';
+                weightWarning.textContent = `Total weights must sum to 100%. Current: ${total}%. Please adjust.`;
+                return false;
+            } else {
+                weightWarning.style.display = 'none';
+                return true;
+            }
+        }
+        return true;
+    };
+
+    const setupWeightListeners = () => {
+        for (const key in weightElements) {
+            if (weightElements[key].slider) {
+                updateWeightDisplays(key);
+                weightElements[key].slider.addEventListener('input', (e) => updateWeightDisplays(key, e.target));
+            }
+            if (weightElements[key].text) {
+                weightElements[key].text.addEventListener('input', (e) => updateWeightDisplays(key, e.target));
+                weightElements[key].text.addEventListener('blur', (e) => {
+                    let val = parseInt(e.target.value, 10);
+                    if (isNaN(val) || val < 0 || val > 100) {
+                        val = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
+                        e.target.value = val;
+                    }
+                    updateWeightDisplays(key, e.target);
+                });
+            }
+        }
+        checkTotalWeights();
+    };
+    // END Weight Adjustment Logic
+
     const loadJobDescriptionsForSelect = async () => {
         if (!jobSelect) return;
         jobSelect.innerHTML = '<option value="">-- Loading Jobs --</option>';
@@ -574,15 +817,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (matchResumesBtn) {
         if (matchButton) matchButton.dataset.originalText = matchButton.innerHTML;
 
+        if (window.location.pathname === '/dashboard') {
+            setupWeightListeners();
+        }
+
         matchResumesBtn.addEventListener('click', async () => {
             const selectedJobId = jobSelect.value;
             clearMessage(matchStatus);
-            matchingResultsDiv.innerHTML = ''; // Clear previous results
-            if (matchEmptyState) matchEmptyState.classList.add('hidden'); // Hide empty state
+            matchingResultsDiv.innerHTML = '';
+            if (matchEmptyState) matchEmptyState.classList.add('hidden');
 
             if (!selectedJobId) {
                 showMessage(matchStatus, 'Please select a job description first.', 'error');
-                if (matchEmptyState) matchEmptyState.classList.remove('hidden'); // Show empty state again if no selection
+                if (matchEmptyState) matchEmptyState.classList.remove('hidden');
+                return;
+            }
+
+            if (!checkTotalWeights()) {
+                showMessage(matchStatus, 'Please adjust weights; they must sum to 100%.', 'error');
                 return;
             }
 
@@ -591,6 +843,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData();
             formData.append('job_id', selectedJobId);
+
+            const currentWeights = {};
+            for (const key in weightElements) {
+                if (weightElements[key].text) {
+                    currentWeights[key] = parseFloat(weightElements[key].text.value) / 100;
+                } else if (weightElements[key].slider) {
+                    currentWeights[key] = parseFloat(weightElements[key].slider.value) / 100;
+                }
+            }
+            formData.append('weights', JSON.stringify(currentWeights));
 
             try {
                 const response = await authFetch(`${API_BASE_URL}/api/match-resumes`, {
@@ -610,15 +872,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const resultCard = document.createElement('div');
                     resultCard.className = 'card p-4 mb-4';
                     
-                    // Dynamic score bar gradient
                     let scoreBarGradient;
                     if (result.overall_score >= 80) {
-                        scoreBarGradient = 'linear-gradient(to right, #22c55e, #16a34a)'; // Green
+                        scoreBarGradient = 'linear-gradient(to right, #22c55e, #16a34a)';
                     } else if (result.overall_score >= 50) {
-                        scoreBarGradient = 'linear-gradient(to right, #facc15, #eab308)'; // Yellow
+                        scoreBarGradient = 'linear-gradient(to right, #facc15, #eab308)';
                     } else {
-                        scoreBarGradient = 'linear-gradient(to right, #ef4444, #dc2626)'; // Red
+                        scoreBarGradient = 'linear-gradient(to right, #ef4444, #dc2626)';
                     }
+
+                    const appliedWeights = result.match_details.applied_weights || { skills: 0.6, experience: 0.2, certifications: 0.1, education: 0.1 };
 
                     resultCard.innerHTML = `
                         <div class="flex items-center justify-between mb-2">
@@ -637,10 +900,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="flex flex-wrap gap-2">${renderSkillTags(result.additional_skills, 'additional-skill')}</div>
                         </div>
                         <div class="mt-4 text-sm text-gray-600">
-                            <p><strong>Match Details:</strong></p>
+                            <p class="font-bold text-gray-700">Match Details:</p>
                             <p>Experience Score: ${result.match_details.experience_score}% (Resume: ${result.match_details.resume_exp_years || 0} yrs, Job Req: ${result.match_details.job_req_exp_years || 0} yrs)</p>
                             <p>Certifications Score: ${result.match_details.certifications_score}%</p>
                             <p>Education Score: ${result.match_details.education_score}% (Resume: ${result.match_details.resume_highest_edu && result.match_details.resume_highest_edu.toLowerCase() !== 'none' ? result.match_details.resume_highest_edu : 'N/A'} ${result.match_details.resume_major && result.match_details.resume_major.toLowerCase() !== 'none' ? `(${result.match_details.resume_major})` : ''}, Job Req: ${result.match_details.job_req_edu && result.match_details.job_req_edu.toLowerCase() !== 'none' ? result.match_details.job_req_edu : 'N/A'} ${result.match_details.job_req_major && result.match_details.job_req_major.toLowerCase() !== 'none' ? `(${result.match_details.job_req_major})` : ''})</p>
+                            
+                            <p class="mt-2 font-bold text-gray-700">Applied Weights:</p>
+                            <p>Skills: ${Math.round(appliedWeights.skills * 100)}%, Experience: ${Math.round(appliedWeights.experience * 100)}%, Certifications: ${Math.round(appliedWeights.certifications * 100)}%, Education: ${Math.round(appliedWeights.education * 100)}%</p>
                         </div>
                     `;
                     matchingResultsDiv.appendChild(resultCard);
@@ -648,12 +914,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 showMessage(matchStatus, `Error matching resumes: ${error.message}`, 'error');
-                if (matchEmptyState) matchEmptyState.classList.remove('hidden'); // Show empty state on error
+                if (matchEmptyState) matchEmptyState.classList.remove('hidden');
             } finally {
                 toggleButtonState(matchButton, false);
             }
         });
     }
+
+    // --- Admin Panel Specific Logic ---
+    const totalUsersCountElem = document.getElementById('totalUsersCount');
+    const usersTableBody = document.getElementById('usersTableBody');
+    const usersEmptyState = document.getElementById('usersEmptyState');
+
+    const loadAdminDashboardData = async () => {
+        if (!totalUsersCountElem) return;
+
+        try {
+            const users = await authFetch(`${API_BASE_URL}/api/admin/users`);
+            totalUsersCountElem.textContent = users.length;
+        } catch (error) {
+            totalUsersCountElem.textContent = 'Error';
+            console.error('Error fetching total users:', error);
+        }
+    };
+
+    const loadUsersList = async () => {
+        if (!usersTableBody) return;
+
+        if (usersEmptyState) usersEmptyState.classList.add('hidden');
+        usersTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500"><span class="spinner"></span> Loading users...</td></tr>';
+
+        try {
+            const users = await authFetch(`${API_BASE_URL}/api/admin/users`);
+            usersTableBody.innerHTML = '';
+
+            if (users.length === 0) {
+                if (usersEmptyState) usersEmptyState.classList.remove('hidden');
+                return;
+            }
+
+            users.forEach(user => {
+                const row = usersTableBody.insertRow();
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${user.name || 'N/A'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${user.email}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${user.id}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="btn-secondary delete-user-btn" data-user-id="${user.id}" data-user-email="${user.email}">Delete</button>
+                    </td>
+                `;
+            });
+
+            document.querySelectorAll('.delete-user-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const userId = e.target.dataset.userId;
+                    const userEmail = e.target.dataset.userEmail;
+                    if (confirm(`Are you sure you want to delete user ${userEmail} (ID: ${userId})? This action cannot be undone and will delete all associated data.`)) {
+                        try {
+                            const response = await authFetch(`${API_BASE_URL}/api/admin/users/${userId}`, { method: 'DELETE' });
+                            alert(response.message);
+                            loadUsersList();
+                            loadAdminDashboardData();
+                        } catch (error) {
+                            alert(`Error deleting user: ${error.message}`);
+                            console.error('Error deleting user:', error);
+                        }
+                    }
+                });
+            });
+
+        } catch (error) {
+            usersTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-600">Failed to load users: ${error.message}</td></tr>`;
+        }
+    };
 
 
     // --- Initialization based on current page ---
@@ -664,10 +1004,8 @@ document.addEventListener('DOMContentLoaded', () => {
             redirectToLogin();
             return;
         }
-        loadJobDescriptionsForSelect(); // Load jobs for the dropdown on dashboard
+        loadJobDescriptionsForSelect();
         if (matchingResultsDiv && matchEmptyState) {
-            // Check if there are existing results (e.g., from a previous session, though not persisted now)
-            // Or just ensure empty state is visible initially
             if (matchingResultsDiv.children.length === 0) {
                 matchEmptyState.classList.remove('hidden');
             }
@@ -677,16 +1015,28 @@ document.addEventListener('DOMContentLoaded', () => {
             redirectToLogin();
             return;
         }
-        loadResumes(); // Load resumes list on uploaded resumes page
+        loadResumes();
     } else if (currentPage === '/job-descriptions-page') {
         if (!isAuthenticated()) {
             redirectToLogin();
             return;
         }
-        loadJobDescriptions(); // Load job descriptions list on job descriptions page
-    } else if (currentPage === '/' || currentPage === '/login' || currentPage === '/signup') {
+        loadJobDescriptions();
+    } else if (currentPage === '/admin-panel') {
+        if (!isAuthenticated()) {
+            redirectToAdminLogin();
+            return;
+        }
+        loadAdminDashboardData();
+    } else if (currentPage === '/admin-panel/users') {
+        if (!isAuthenticated()) {
+            redirectToAdminLogin();
+            return;
+        }
+        loadUsersList();
+    } else if (currentPage === '/' || currentPage === '/login' || currentPage === '/signup' || currentPage === '/admin-login') {
         if (isAuthenticated()) {
-            redirectToDashboard();
+            redirectToDashboard(); 
         }
     }
 });

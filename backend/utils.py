@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import List, Tuple, Union
 
 from fastapi import UploadFile # Keep this import for UploadFile type hint
+import httpx # NEW: Import httpx for async HTTP requests
+from bs4 import BeautifulSoup # NEW: Import BeautifulSoup for HTML parsing
 
 async def save_upload_file(upload_file: UploadFile, destination: str) -> str:
     """
@@ -216,3 +218,36 @@ class FileValidator:
         
         return True, "File is valid."
 
+async def fetch_text_from_url(url: str) -> str:
+    """
+    Fetches content from a URL and attempts to extract human-readable text.
+    Handles basic HTML parsing to remove tags.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client: # Add a timeout
+            response = await client.get(url)
+            response.raise_for_status() # Raise an exception for bad status codes
+
+            # Check content-type header for text/html
+            content_type = response.headers.get('Content-Type', '').lower()
+            if 'text/html' in content_type:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                # Remove script and style tags
+                for script_or_style in soup(['script', 'style']):
+                    script_or_style.extract()
+                # Get text, then clean up whitespace
+                text = soup.get_text()
+                return re.sub(r'\s+', ' ', text).strip()
+            elif 'text/plain' in content_type:
+                return response.text.strip()
+            else:
+                # For other content types, just return the text as is or raise an error
+                # For this feature, we primarily expect text or HTML job descriptions
+                print(f"Warning: Unexpected content type '{content_type}' for URL: {url}")
+                return response.text.strip() # Try to return text anyway
+    except httpx.RequestError as e:
+        raise ValueError(f"Network error or invalid URL: {e}")
+    except httpx.HTTPStatusError as e:
+        raise ValueError(f"HTTP error fetching URL: {e.response.status_code} - {e.response.text}")
+    except Exception as e:
+        raise ValueError(f"Could not fetch or parse content from URL: {e}")

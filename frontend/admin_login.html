@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - ResumeRank</title>
+    <title>Admin Login - ResumeRank</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
@@ -20,24 +20,21 @@
         
         <div class="w-full max-w-md z-10">
             <div class="card bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Login to ResumeRank</h2>
-                <form id="loginForm" class="space-y-6">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Admin Login</h2>
+                <form id="adminLoginForm" class="space-y-6">
                     <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                        <input type="email" id="email" name="username" required class="input-field mt-1" placeholder="you@example.com">
+                        <label for="email" class="block text-sm font-medium text-gray-700">Admin Email Address</label>
+                        <input type="email" id="email" name="username" required class="input-field mt-1" placeholder="admin@example.com">
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                         <input type="password" id="password" name="password" required class="input-field mt-1" placeholder="••••••••">
                     </div>
-                    <button type="submit" class="btn-primary w-full">Sign In</button>
-                    <div id="loginStatus" class="mt-4 text-sm font-medium text-center"></div>
+                    <button type="submit" class="btn-primary w-full">Sign In as Admin</button>
+                    <div id="adminLoginStatus" class="mt-4 text-sm font-medium text-center"></div>
                 </form>
                 <p class="text-center text-sm text-gray-600 mt-6">
-                    Don't have an account? <a href="/signup" class="font-medium text-indigo-600 hover:text-indigo-500">Sign up</a>
-                </p>
-                <p class="text-center text-sm text-gray-600 mt-2">
-                    <a href="/admin-login" class="font-medium text-indigo-600 hover:text-indigo-500">Admin Login</a>
+                    Not an admin? Try <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">User Login</a>
                 </p>
             </div>
         </div>

@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from typing import List, Dict, Optional, Any
 
-from sqlalchemy import create_engine, Column, String, Float, DateTime, ForeignKey, Text, Integer
+from sqlalchemy import create_engine, Column, String, Float, DateTime, ForeignKey, Text, Integer, Boolean
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,6 +28,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    name = Column(String, nullable=True)
+    is_admin = Column(Boolean, default=False)
     
     resumes = relationship("Resume", back_populates="owner", cascade="all, delete-orphan")
     jobs = relationship("Job", back_populates="owner", cascade="all, delete-orphan")
@@ -42,14 +44,10 @@ class Resume(Base):
     extracted_skills = Column(String)
     upload_date = Column(DateTime, default=datetime.now)
     experience = Column(Text, default="[]")
-    # Removed education column as it's no longer a detailed list
-    # education = Column(Text, default="[]")
     total_years_experience = Column(Integer, default=0)
-    # NEW: Columns for highest education level and major
     highest_education_level = Column(String, nullable=True)
     major = Column(String, nullable=True)
     
-    # Link to the user who owns this resume
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="resumes")
 
@@ -66,11 +64,9 @@ class Job(Base):
     created_date = Column(DateTime, default=datetime.now)
     required_experience_years = Column(Integer, default=None)
     required_certifications = Column(Text, default="[]")
-    # NEW: Columns for required education level and major
     required_education_level = Column(String, nullable=True)
     required_major = Column(String, nullable=True)
     
-    # Link to the user who owns this job description
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="jobs")
 
@@ -104,27 +100,45 @@ class Database:
     def get_user_by_email(self, db: Any, email: str) -> Optional[User]:
         return db.query(User).filter(User.email == email).first()
 
-    def create_user(self, db: Any, email: str, hashed_password: str) -> User:
-        db_user = User(email=email, hashed_password=hashed_password)
+    def create_user(self, db: Any, email: str, hashed_password: str, name: Optional[str] = None, is_admin: bool = False) -> User:
+        # Corrected: Instantiate User without 'is_admin' as a constructor arg,
+        # then set the attribute directly.
+        db_user = User(email=email, hashed_password=hashed_password, name=name)
+        db_user.is_admin = is_admin # Set the is_admin attribute after instantiation
+
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
         return db_user
+           
+    def get_user_by_id(self, db: Any, user_id: int) -> Optional[User]:
+        return db.query(User).filter(User.id == user_id).first()
+
+    def get_all_users(self, db: Any) -> List[User]:
+        return db.query(User).all()
+
+    def delete_user(self, db: Any, user_id: int):
+        user_to_delete = db.query(User).filter(User.id == user_id).first()
+        if user_to_delete:
+            db.delete(user_to_delete)
+            db.commit()
+            return True
+        return False
 
     # --- Resume Operations ---
     def save_resume(self, db: Any, filename: str, file_path: str, raw_text: str, 
                     extracted_skills: List[str], user_id: int, experience: Optional[List[Dict]] = None, 
-                    total_years_experience: Optional[int] = 0, # Removed education
-                    highest_education_level: Optional[str] = None, # NEW
-                    major: Optional[str] = None # NEW
+                    total_years_experience: Optional[int] = 0,
+                    highest_education_level: Optional[str] = None,
+                    major: Optional[str] = None
                     ) -> int:
         db_resume = Resume(
             filename=filename, file_path=file_path, raw_text=raw_text,
             extracted_skills=json.dumps(extracted_skills), user_id=user_id,
-            experience=json.dumps(experience or []), # Removed education
+            experience=json.dumps(experience or []),
             total_years_experience=total_years_experience,
-            highest_education_level=highest_education_level, # NEW
-            major=major # NEW
+            highest_education_level=highest_education_level,
+            major=major
         )
         db.add(db_resume)
         db.commit()
@@ -139,16 +153,16 @@ class Database:
                              required_skills: List[str], user_id: int, 
                              required_experience_years: Optional[int] = None,
                              required_certifications: Optional[List[str]] = None,
-                             required_education_level: Optional[str] = None, # NEW
-                             required_major: Optional[str] = None # NEW
+                             required_education_level: Optional[str] = None,
+                             required_major: Optional[str] = None
                              ) -> int:
         db_job = Job(
             title=title, company=company, description=description,
             required_skills=json.dumps(required_skills), user_id=user_id,
             required_experience_years=required_experience_years,
             required_certifications=json.dumps(required_certifications or []),
-            required_education_level=required_education_level, # NEW
-            required_major=required_major # NEW
+            required_education_level=required_education_level,
+            required_major=required_major
         )
         db.add(db_job)
         db.commit()

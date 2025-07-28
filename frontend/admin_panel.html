@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ResumeRank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-indigo-700 text-white p-6 shadow-md">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div class="flex items-center mb-2 sm:mb-0">
+                <img src="/static/images/logo.png" alt="ResumeRank Logo" class="h-16 w-auto mr-4">
+                <h1 class="text-4xl font-bold" style="font-family: 'Playfair Display', serif;">Admin Panel</h1>
+            </div>
+            <nav>
+                <ul class="flex space-x-4 items-center">
+                    <li><a href="/admin-panel" class="current-page-link">Dashboard</a></li>
+                    <li><a href="/admin-panel/users" class="nav-link hover:text-indigo-200">List of Users</a></li>
+                    <li><button id="logoutBtn" class="btn-secondary !text-sm !py-1 !px-3">Logout</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <section class="card bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome, Admin!</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="stat-card bg-indigo-50 p-4 rounded-lg flex items-center shadow-sm">
+                    <div>
+                        <p class="text-sm text-gray-500">Total Users</p>
+                        <p id="totalUsersCount" class="text-2xl font-bold text-gray-800"><span class="spinner"></span> Loading...</p>
+                    </div>
+                </div>
+                </div>
+        </section>
+
+        <section id="admin-dashboard-content" class="card bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Admin Actions & Overview</h2>
+            <p class="text-gray-600">Use the navigation above to manage users and view system statistics.</p>
+            </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8 shadow-inner">
+        <p>&copy; 2025 ResumeRank. Admin Panel.</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

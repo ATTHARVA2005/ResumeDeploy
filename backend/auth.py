@@ -89,3 +89,12 @@ async def get_current_user(
         raise credentials_exception
         
     return user
+
+# NEW: Admin User Dependency
+async def get_current_admin_user(current_user: Annotated[models.User, Depends(get_current_user)]) -> models.User:
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operation forbidden: Not an administrator",
+        )
+    return current_user
