@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addJobButton = addJobDescriptionForm ? addJobDescriptionForm.querySelector('button[type="submit"]') : null;
     
     const addJobDescriptionUrlForm = document.getElementById('addJobDescriptionUrlForm');
-    const jobUrlInput = document.getElementById('jobUrl'); // NEW: Reference to URL input
+    const jobUrlInput = document.getElementById('jobUrl');
     const jobUrlStatus = document.getElementById('jobUrlStatus');
     const jobUrlButton = addJobDescriptionUrlForm ? addJobDescriptionUrlForm.querySelector('button[type="submit"]') : null;
     const toggleJobInputMode = document.getElementById('toggleJobInputMode');
@@ -392,12 +392,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 addJobDescriptionForm.style.display = 'none';
                 addJobDescriptionUrlForm.style.display = 'block';
                 clearMessage(jobStatus);
-                jobUrlInput.focus(); // Focus on the URL input when switching
+                jobUrlInput.focus();
             } else {
                 addJobDescriptionForm.style.display = 'block';
                 addJobDescriptionUrlForm.style.display = 'none';
                 clearMessage(jobUrlStatus);
-                jobTitleInput.focus(); // Focus on title when switching back
+                jobTitleInput.focus();
             }
         });
     }
@@ -442,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: Handle URL submission to extract, then pre-fill
     if (addJobDescriptionUrlForm) {
         if (jobUrlButton) jobUrlButton.dataset.originalText = jobUrlButton.innerHTML;
 
@@ -455,25 +454,23 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage(jobUrlStatus, 'Fetching job description from URL and processing...', 'info', true);
 
             try {
-                const extractedData = await authFetch(`${API_BASE_URL}/api/extract-job-from-url`, { // CHANGED ENDPOINT
+                const extractedData = await authFetch(`${API_BASE_URL}/api/extract-job-from-url`, {
                     method: 'POST',
                     body: JSON.stringify({ url: jobUrl })
                 });
 
-                // Pre-fill the regular job description form
                 jobTitleInput.value = extractedData.title;
                 companyNameInput.value = extractedData.company;
                 jobDescriptionTextInput.value = extractedData.description;
 
-                // Switch back to the manual form and show success
-                toggleJobInputMode.checked = false; // Uncheck "Add by URL" toggle
+                toggleJobInputMode.checked = false;
                 addJobDescriptionForm.style.display = 'block';
                 addJobDescriptionUrlForm.style.display = 'none';
-                clearMessage(jobUrlStatus); // Clear URL status
+                clearMessage(jobUrlStatus);
                 showMessage(jobStatus, 'Job details extracted and pre-filled. Please review and click "Add Job" to save.', 'success');
-                jobTitleInput.focus(); // Focus on first field of the pre-filled form
+                jobTitleInput.focus();
                 
-                e.target.reset(); // Clear the URL input
+                e.target.reset();
 
             } catch (error) {
                 showMessage(jobUrlStatus, `Error fetching job from URL: ${error.message}`, 'error');
@@ -487,6 +484,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Load Resumes List (Uploaded Resumes Page) ---
     const resumesListDiv = document.getElementById('resumesList');
     const resumesEmptyState = document.getElementById('resumesEmptyState');
+    
+    // NEW: Function to filter resumes by search input
+    const filterResumes = () => {
+        const searchTerm = document.getElementById('resumeSearchInput').value.toLowerCase();
+        document.querySelectorAll('#resumesList .list-item').forEach(item => {
+            const textContent = item.textContent.toLowerCase();
+            if (textContent.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    };
+
     const loadResumes = async () => {
         if (!resumesListDiv) return;
 
@@ -547,6 +558,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+            
+            // NEW: Attach listener to the search input
+            const resumeSearchInput = document.getElementById('resumeSearchInput');
+            if (resumeSearchInput) {
+                resumeSearchInput.addEventListener('input', filterResumes);
+            }
 
         } catch (error) {
             resumesListDiv.innerHTML = `<p class="text-red-600">Failed to load resumes: ${error.message}</p>`;
@@ -556,6 +573,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Load Job Descriptions List (Job Descriptions Page) ---
     const jobDescriptionsListDiv = document.getElementById('jobDescriptionsList');
     const jobsEmptyState = document.getElementById('jobsEmptyState');
+
+    // NEW: Function to filter jobs by search input
+    const filterJobs = () => {
+        const jobSearchInput = document.getElementById('jobSearchInput');
+        if (!jobSearchInput) return;
+        const searchTerm = jobSearchInput.value.toLowerCase();
+        document.querySelectorAll('#jobDescriptionsList .list-item').forEach(item => {
+            const textContent = item.textContent.toLowerCase();
+            if (textContent.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    };
+
     const loadJobDescriptions = async () => {
         if (!jobDescriptionsListDiv) return;
 
@@ -640,6 +673,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+            
+            // NEW: Attach listener to the search input
+            const jobSearchInput = document.getElementById('jobSearchInput');
+            if (jobSearchInput) {
+                jobSearchInput.addEventListener('input', filterJobs);
+            }
 
         } catch (error) {
             jobDescriptionsListDiv.innerHTML = `<p class="text-red-600">Failed to load job descriptions: ${error.message}</p>`;
@@ -790,16 +829,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         checkTotalWeights();
     };
-    // END Weight Adjustment Logic
 
     const loadJobDescriptionsForSelect = async () => {
         if (!jobSelect) return;
         jobSelect.innerHTML = '<option value="">-- Loading Jobs --</option>';
         try {
-            const jobs = await authFetch(`${API_BASE_URL}/api/job-descriptions`);
+            const allJobs = await authFetch(`${API_BASE_URL}/api/job-descriptions`);
             jobSelect.innerHTML = '<option value="">-- Select a Job --</option>';
-            if (jobs.length > 0) {
-                jobs.forEach(job => {
+            if (allJobs.length > 0) {
+                allJobs.forEach(job => {
                     const option = document.createElement('option');
                     option.value = job.id;
                     option.textContent = `${job.title} at ${job.company}`;
@@ -926,6 +964,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const usersTableBody = document.getElementById('usersTableBody');
     const usersEmptyState = document.getElementById('usersEmptyState');
 
+    // NEW: Function to filter users by search input
+    const filterUsers = () => {
+        const userSearchInput = document.getElementById('userSearchInput');
+        if (!userSearchInput) return;
+        const searchTerm = userSearchInput.value.toLowerCase();
+        document.querySelectorAll('#usersTableBody tr').forEach(row => {
+            const textContent = row.textContent.toLowerCase();
+            if (textContent.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    };
+
     const loadAdminDashboardData = async () => {
         if (!totalUsersCountElem) return;
 
@@ -989,12 +1042,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+            
+            // NEW: Attach listener to the search input
+            const userSearchInput = document.getElementById('userSearchInput');
+            if (userSearchInput) {
+                userSearchInput.addEventListener('input', filterUsers);
+            }
 
         } catch (error) {
             usersTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-600">Failed to load users: ${error.message}</td></tr>`;
         }
     };
 
+
+    // --- Theme Toggle Logic ---
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    
+    // Function to set the theme
+    const setTheme = (theme) => {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+        }
+    };
+    
+    // Check for saved theme preference on page load
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+
+    // Toggle theme on button click
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+            setTheme(currentTheme);
+        });
+    }
 
     // --- Initialization based on current page ---
     const currentPage = window.location.pathname;
@@ -1005,11 +1090,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         loadJobDescriptionsForSelect();
-        if (matchingResultsDiv && matchEmptyState) {
-            if (matchingResultsDiv.children.length === 0) {
-                matchEmptyState.classList.remove('hidden');
-            }
-        }
     } else if (currentPage === '/uploaded-resumes') {
         if (!isAuthenticated()) {
             redirectToLogin();

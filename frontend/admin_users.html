@@ -29,6 +29,9 @@
     <main class="container mx-auto p-6 flex-grow">
         <section class="card bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">All Registered Users</h2>
+
+            <input type="text" id="userSearchInput" placeholder="Search users by name or email..." class="input-field mb-4">
+
             <div id="usersList" class="overflow-x-auto">
                 <div id="usersEmptyState" class="empty-state hidden">
                     <svg class="empty-state-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H2m2-10h10m0 0a2 2 0 100-4m0 4a2 2 0 110-4m0 4H3m2 10h10m0 0a2 2 0 100-4m0 4a2 2 0 110-4m0 4H3"></path></svg>

@@ -502,3 +502,32 @@ header nav ul {
     font-size: 1rem;
     margin-bottom: 1.5rem;
 }
+/* frontend/static/css/style.css */
+
+/* General Body and Container Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc; /* Lighter background for a modern feel */
+    color: #334155; /* Darker text for readability */
+    overflow-x: hidden;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+/* NEW: Dark mode styles */
+body.dark-mode {
+    background-color: #0f172a; /* Dark background */
+    color: #cbd5e1; /* Light text */
+}
+
+/* Card Styling */
+.card {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
