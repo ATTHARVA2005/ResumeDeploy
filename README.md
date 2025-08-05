@@ -1,7 +1,7 @@
 # ResumeRank: Your AI-Powered Recruitment Assistant
 
 Creator: Attharva Gupta
-URL: https://resumerank-8pfn.onrender.com/
+URL: https://resumerank-8pfn.onrender.com <br>
 🚀 Introduction
 
 ResumeRank is an innovative, full-stack web application designed to revolutionize the recruitment process. Leveraging the power of Artificial Intelligence, specifically Google's Gemini API, ResumeRank automates the tedious tasks of resume and job description analysis. It provides intelligent matching capabilities, helping recruiters and hiring managers find the best candidates faster, with unbiased and quantifiable results.
